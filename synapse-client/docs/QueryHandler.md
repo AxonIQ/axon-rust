@@ -1,0 +1,22 @@
+# QueryHandler
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**id** | Option<**String**> | Unique query handler identifier | [optional]
+**names** | **Vec<String>** |  | 
+**endpoint** | **String** | Message-handling client application endpoint | 
+**endpoint_type** | Option<**String**> | Type of client application endpoint - `http-raw` endpoint type is served with single raw query payload - `http-message` endpoint type is served with single query message  | [optional][default to http-raw]
+**endpoint_options** | Option<[**Vec<crate::models::EndpointOption>**](EndpointOption.md)> |  | [optional]
+**client_id** | Option<**String**> | Unique client application identifier | [optional]
+**component_name** | Option<**String**> | Client application name | [optional]
+**enabled** | Option<**bool**> | Is this command handler enabled? | [optional][default to true]
+**context** | Option<**String**> | Context name | [optional][default to default]
+**client_authentication_id** | Option<**String**> | Id of the stored authentication used by synapse to call the registered handler | [optional]
+**server_authentication_id** | Option<**String**> | Id of the stored authentication used by synapse to contact axon server for this registration | [optional]
+**last_error** | Option<**String**> | The last error occuring with this handler | [optional]
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
