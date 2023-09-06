@@ -1,5 +1,5 @@
 [package]
-name = "openapi"
+name = "synapse-client"
 version = "1.0.0"
 authors = ["OpenAPI Generator team and contributors"]
 description = "API for Axon Synapse http services"

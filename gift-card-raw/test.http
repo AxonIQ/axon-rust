@@ -1,0 +1,7 @@
+POST http://localhost:3030/commands
+Content-Type: application/json
+
+{
+  "id": "0001",
+  "name" : "IssueGiftCard"
+}
