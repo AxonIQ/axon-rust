@@ -40,14 +40,13 @@ impl Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Configuration {
-            base_path: "http://localhost".to_owned(),
+            base_path: "http://localhost:8080".to_owned(),
             user_agent: Some("OpenAPI-Generator/1.0.0/rust".to_owned()),
             client: reqwest_middleware::ClientBuilder::new(reqwest::Client::new()).build(),
             basic_auth: None,
             oauth_access_token: None,
             bearer_access_token: None,
             api_key: None,
-
         }
     }
 }
