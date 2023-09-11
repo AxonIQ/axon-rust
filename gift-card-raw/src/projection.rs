@@ -1,12 +1,9 @@
-use crate::messages::events::{
-    to_publishable_event_message, GiftCardCanceled, GiftCardIssued, GiftCardRedeemed,
-};
+use crate::messages::events::{GiftCardCanceled, GiftCardIssued, GiftCardRedeemed};
 use crate::messages::AxonMessage;
 use crate::warp_util::HandlerResult;
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use once_cell::sync::Lazy;
 use synapse_client::apis::event_handlers_api::register_event_handler;
-use synapse_client::apis::events_api::publish_event_message;
 use synapse_client::models::{EventHandlerRegistration, EventMessage};
 use warp::Filter;
 
@@ -55,19 +52,4 @@ pub async fn register_gift_card_event_handler() {
         .await
         .unwrap();
     println!("Result of registering event handlers: {:?}", result)
-}
-
-pub async fn publish_event() {
-    let event = GiftCardIssued {
-        id: "0002".to_string(),
-        amount: 1000,
-    };
-    let event_message = to_publishable_event_message(
-        GiftCardIssued::name(),
-        Some(String::from("0002")),
-        Some(0),
-        &event,
-    );
-    let result = publish_event_message(&CONFIGURATION, CONTEXT, Some(event_message)).await;
-    println!("Result of publishing an event: {:?}", result);
 }

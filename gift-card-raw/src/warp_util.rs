@@ -44,4 +44,10 @@ impl HandlerResult {
             }
         }
     }
+    pub fn bad_request(error: String) -> HandlerResult {
+        HandlerResult::Error(HandlerErrorMessage {
+            code: 400,
+            message: error,
+        })
+    }
 }

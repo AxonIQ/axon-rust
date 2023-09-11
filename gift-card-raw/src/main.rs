@@ -1,6 +1,6 @@
 use crate::cleanup::{remove_current_command_handlers, remove_current_event_handlers};
 use crate::command_handling::{command_route, issue_card, register_gift_card_command_handler};
-use crate::projection::{event_route, publish_event, register_gift_card_event_handler};
+use crate::projection::{event_route, register_gift_card_event_handler};
 use once_cell::sync::Lazy;
 use synapse_client::apis::configuration::Configuration;
 use tokio::join;
@@ -28,7 +28,6 @@ async fn main() {
     register_gift_card_event_handler().await;
     sleep(Duration::from_secs(3)).await;
     issue_card().await;
-    publish_event().await;
     join!(handle).0.unwrap();
 }
 

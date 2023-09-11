@@ -5,13 +5,13 @@ use synapse_client::models::CommandMessage;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IssueGiftCard {
     pub id: String,
-    pub amount: i32,
+    pub amount: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RedeemGiftCard {
     pub id: String,
-    pub amount: i32,
+    pub amount: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
