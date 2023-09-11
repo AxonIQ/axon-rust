@@ -1,9 +1,8 @@
 use crate::messages::events::{GiftCardCanceled, GiftCardIssued, GiftCardRedeemed};
 use crate::messages::AxonMessage;
 use crate::warp_util::HandlerResult;
-use crate::CLIENT_ID;
+use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use once_cell::sync::Lazy;
-use synapse_client::apis::configuration::Configuration;
 use synapse_client::apis::event_handlers_api::register_event_handler;
 use synapse_client::models::{EventHandlerRegistration, EventMessage};
 use warp::Filter;
@@ -17,7 +16,7 @@ impl GiftCardProjection {
         GiftCardProjection {}
     }
     pub fn handle_event(&self, event_message: EventMessage) -> HandlerResult {
-        println!("received: {:?}", event_message);
+        println!("received event: {:?}", event_message);
         HandlerResult::EventSuccess
     }
 }
@@ -29,14 +28,14 @@ pub fn event_route() -> impl Filter<Extract = impl warp::Reply, Error = warp::Re
         .map(|event: EventMessage| PROJECTION.handle_event(event).into_json())
 }
 
-pub async fn register_gift_card_event_handler(configuration: &Configuration, context: &str) {
+pub async fn register_gift_card_event_handler() {
     let registration = EventHandlerRegistration {
         names: vec![
             String::from(GiftCardIssued::name()),
             String::from(GiftCardRedeemed::name()),
             String::from(GiftCardCanceled::name()),
         ],
-        endpoint: String::from("http://host.docker.internal:3030/commands"),
+        endpoint: String::from("http://host.docker.internal:3030/events"),
         endpoint_type: Some(String::from("http-message")),
         endpoint_options: None,
         client_id: Some(String::from(CLIENT_ID)),
@@ -49,7 +48,7 @@ pub async fn register_gift_card_event_handler(configuration: &Configuration, con
         server_authentication_id: None,
         last_error: None,
     };
-    let result = register_event_handler(configuration, context, Some(registration))
+    let result = register_event_handler(&CONFIGURATION, CONTEXT, Some(registration))
         .await
         .unwrap();
     println!("Result of registering event handlers: {:?}", result)

@@ -9,8 +9,8 @@ pub struct Empty {}
 
 #[derive(Serialize)]
 pub struct HandlerErrorMessage {
-    code: u16,
-    message: String,
+    pub code: u16,
+    pub message: String,
 }
 
 pub enum HandlerResult {
@@ -43,5 +43,11 @@ impl HandlerResult {
                 reply::with_status(rep, StatusCode::OK)
             }
         }
+    }
+    pub fn bad_request(error: String) -> HandlerResult {
+        HandlerResult::Error(HandlerErrorMessage {
+            code: 400,
+            message: error,
+        })
     }
 }

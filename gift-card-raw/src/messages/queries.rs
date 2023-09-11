@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct CardSummary {
     pub id: String,
-    pub initial_amount: i32,
-    pub remaining_amount: i32,
+    pub initial_amount: u32,
+    pub remaining_amount: u32,
+    pub canceled: bool,
     pub issued: String,
     pub last_updated: String,
 }

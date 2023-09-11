@@ -5,3 +5,12 @@ Content-Type: application/json
   "id": "0001",
   "name" : "IssueGiftCard"
 }
+
+###
+POST http://localhost:3030/events
+Content-Type: application/json
+
+{
+"id": "0001",
+"name" : "IssueGiftCard"
+}
