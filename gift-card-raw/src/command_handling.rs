@@ -9,22 +9,29 @@ use crate::messages::events::{
 use crate::messages::AxonMessage;
 use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
+use moka::future::Cache;
 use once_cell::sync::Lazy;
+use std::time::Duration;
 use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::command_handlers_api::register_command_handler;
 use synapse_client::apis::commands_api::send_command_message;
 use synapse_client::apis::events_api::publish_event_message;
 use synapse_client::models::{CommandHandlerRegistration, CommandMessage, ListOfEventMessages};
+use tokio::time::sleep;
 use warp::reply::{Json, WithStatus};
 use warp::Filter;
 
 static COMMAND_MODEL: Lazy<GiftCardCommandModel> = Lazy::new(GiftCardCommandModel::new);
 
-pub struct GiftCardCommandModel {}
+pub struct GiftCardCommandModel {
+    cache: Cache<String, GiftCardAggregate>,
+}
 
 impl GiftCardCommandModel {
-    pub fn new() -> GiftCardCommandModel {
-        GiftCardCommandModel {}
+    fn new() -> GiftCardCommandModel {
+        GiftCardCommandModel {
+            cache: Cache::new(100),
+        }
     }
     pub async fn handle_command(&self, command_message: CommandMessage) -> HandlerResult {
         println!("received command: {:?}", command_message);
@@ -32,15 +39,24 @@ impl GiftCardCommandModel {
         println!("turned to gift card command: {:?}", gift_card_command);
         let aggregate_id = gift_card_command.get_aggregate_id();
         println!("used aggregate id: {}", aggregate_id);
-        let list = aggregate_events(aggregate_id.as_str()).await;
-        let state = into_aggregate_state(list);
+        let state = match self.cache.get(&*aggregate_id) {
+            None => {
+                let list = aggregate_events(aggregate_id.as_str()).await;
+                into_aggregate_state(list)
+            }
+            Some(s) => Some(s),
+        };
         println!("current state: {:?}", state);
         match gift_card_command.apply(state).await {
             Ok(a) => {
                 println!("updated state: {:?}", a);
+                self.cache.insert(aggregate_id, a).await;
                 HandlerResult::CommandSuccess(command_message)
             }
-            Err(e) => e,
+            Err(e) => {
+                self.cache.remove(&*aggregate_id).await;
+                e
+            }
         }
     }
 }
@@ -66,11 +82,11 @@ pub async fn register_gift_card_command_handler() {
         endpoint_type: Some(String::from("http-message")),
         endpoint_options: None,
         client_id: Some(String::from(CLIENT_ID)),
-        component_name: None,
-        load_factor: None,
-        concurrency: None,
-        enabled: None,
-        context: None,
+        component_name: Some(String::from("Gift Card Commands Model")),
+        load_factor: Some(100),
+        concurrency: Some(8),
+        enabled: Some(true),
+        context: Some(String::from(CONTEXT)),
         client_authentication_id: None,
         server_authentication_id: None,
         last_error: None,
@@ -83,7 +99,16 @@ pub async fn register_gift_card_command_handler() {
 
 pub async fn issue_card() {
     let command = IssueGiftCard {
-        id: String::from("0002"),
+        id: String::from("0010"),
+        amount: 1000,
+    };
+    let command_message =
+        to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
+    let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
+    println!("Result of sending a command: {:?}", result);
+    sleep(Duration::from_secs(3)).await;
+    let command = IssueGiftCard {
+        id: String::from("0011"),
         amount: 1000,
     };
     let command_message =
@@ -98,7 +123,7 @@ pub async fn aggregate_events(aggregate_id: &str) -> ListOfEventMessages {
         .unwrap()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct GiftCardAggregate {
     id: String,
     remaining_amount: u32,

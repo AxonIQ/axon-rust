@@ -11,6 +11,7 @@ mod cleanup;
 mod command_handling;
 mod messages;
 mod projection;
+mod temp_fix;
 mod warp_util;
 
 static CONFIGURATION: Lazy<Configuration> = Lazy::new(Configuration::new);

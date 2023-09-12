@@ -2,7 +2,7 @@ use crate::messages::AxonMessage;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct CardSummary {
+pub struct GiftCardSummary {
     pub id: String,
     pub initial_amount: u32,
     pub remaining_amount: u32,

@@ -3,7 +3,7 @@ Content-Type: application/json
 
 {
   "id": "0001",
-  "name" : "IssueGiftCard"
+  "name": "IssueGiftCard"
 }
 
 ###
@@ -11,6 +11,22 @@ POST http://localhost:3030/events
 Content-Type: application/json
 
 {
-"id": "0001",
-"name" : "IssueGiftCard"
+  "items": [
+    {
+      "name": "GiftCardIssued",
+      "aggregateId": "0002",
+      "aggregateType": "",
+      "sequenceNumber": 0,
+      "dateTime": 1694189647.194000000,
+      "index": 0,
+      "id": "0ef18dda-618a-4b84-904a-cce6839b5219",
+      "metaData": {},
+      "payload": {
+        "amount": 1000,
+        "id": "0002"
+      },
+      "payloadType": "GiftCardIssued",
+      "payloadRevision": null
+    }
+  ]
 }
