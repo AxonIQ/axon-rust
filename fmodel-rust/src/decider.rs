@@ -22,17 +22,17 @@ impl<'a, C, S, E> Decider<'a, C, S, E> {
             F1: Fn(&S2) -> S,
             F2: Fn(&S) -> S2,
     {
-        let new_decide = Box::pin(move |c: &C, s2: &S2| {
+        let new_decide = Box::new(move |c: &C, s2: &S2| {
             let s = f1(s2);
             (self.decide)(c, &s)
         });
 
-        let new_evolve = Box::pin(move |s2: &S2, e: &E| {
+        let new_evolve = Box::new(move |s2: &S2, e: &E| {
             let s = f1(s2);
             f2(&(self.evolve)(&s, e))
         });
 
-        let new_initial_state = Box::pin(move || {
+        let new_initial_state = Box::new(move || {
             f2(&(self.initial_state)())
         });
 
@@ -49,16 +49,16 @@ impl<'a, C, S, E> Decider<'a, C, S, E> {
             F1: Fn(&E2) -> E,
             F2: Fn(&E) -> E2,
     {
-        let new_decide = Box::pin(move |c: &C, s: &S| {
+        let new_decide = Box::new(move |c: &C, s: &S| {
             (self.decide)(c, s).into_iter().map(|e: E| { f2(&e) }).collect()
         });
 
-        let new_evolve = Box::pin(move |s: &S, e2: &E2| {
+        let new_evolve = Box::new(move |s: &S, e2: &E2| {
             let e = f1(e2);
             (self.evolve)(s, &e)
         });
 
-        let new_initial_state = Box::pin(move || {
+        let new_initial_state = Box::new(move || {
             (self.initial_state)()
         });
 
@@ -74,16 +74,16 @@ impl<'a, C, S, E> Decider<'a, C, S, E> {
         where
             F: Fn(&C2) -> C,
     {
-        let new_decide = Box::pin(move |c2: &C2, s: &S| {
+        let new_decide = Box::new(move |c2: &C2, s: &S| {
             let c = f(c2);
             (self.decide)(&c, s)
         });
 
-        let new_evolve = Box::pin(move |s: &S, e: &E| {
+        let new_evolve = Box::new(move |s: &S, e: &E| {
             (self.evolve)(s, e)
         });
 
-        let new_initial_state = Box::pin(move || {
+        let new_initial_state = Box::new(move || {
             (self.initial_state)()
         });
 

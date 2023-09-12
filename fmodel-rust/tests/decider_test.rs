@@ -14,7 +14,7 @@ struct OrderState {
 
 fn decider<'a>() -> Decider<'a, OrderCommand, OrderState, OrderEvent> {
     Decider {
-        decide: Box::pin(|command, state| {
+        decide: Box::new(|command, state| {
             match command {
                 OrderCommand::Create(create_cmd) => {
                     vec![OrderEvent::Created(OrderCreatedEvent {
@@ -44,7 +44,7 @@ fn decider<'a>() -> Decider<'a, OrderCommand, OrderState, OrderEvent> {
                 }
             }
         }),
-        evolve: Box::pin(|state, event| {
+        evolve: Box::new(|state, event| {
             let mut new_state = state.clone();
             match event {
                 OrderEvent::Created(created_event) => {
@@ -61,7 +61,7 @@ fn decider<'a>() -> Decider<'a, OrderCommand, OrderState, OrderEvent> {
             }
             new_state
         }),
-        initial_state: Box::pin(|| OrderState {
+        initial_state: Box::new(|| OrderState {
             order_id: 0,
             customer_name: "".to_string(),
             items: Vec::new(),

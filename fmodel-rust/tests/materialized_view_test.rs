@@ -22,7 +22,7 @@ struct OrderViewState {
 
 fn view<'a>() -> View<'a, OrderViewState, OrderEvent> {
     View {
-        evolve: Box::pin(|state, event| {
+        evolve: Box::new(|state, event| {
             let mut new_state = state.clone();
             match event {
                 OrderEvent::Created(created_event) => {
@@ -39,7 +39,7 @@ fn view<'a>() -> View<'a, OrderViewState, OrderEvent> {
             }
             new_state
         }),
-        initial_state: Box::pin(|| OrderViewState {
+        initial_state: Box::new(|| OrderViewState {
             order_id: 0,
             customer_name: "".to_string(),
             items: Vec::new(),

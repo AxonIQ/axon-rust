@@ -20,12 +20,12 @@ impl<'a, S, E> View<'a, S, E> {
             F1: Fn(&S2) -> S,
             F2: Fn(&S) -> S2,
     {
-        let new_evolve = Box::pin(move |s2: &S2, e: &E| {
+        let new_evolve = Box::new(move |s2: &S2, e: &E| {
             let s = f1(s2);
             f2(&(self.evolve)(&s, e))
         });
 
-        let new_initial_state = Box::pin(move || {
+        let new_initial_state = Box::new(move || {
             f2(&(self.initial_state)())
         });
 
@@ -40,12 +40,12 @@ impl<'a, S, E> View<'a, S, E> {
         where
             F: Fn(&E2) -> E,
     {
-        let new_evolve = Box::pin(move |s: &S, e2: &E2| {
+        let new_evolve = Box::new(move |s: &S, e2: &E2| {
             let e = f(e2);
             (self.evolve)(s, &e)
         });
 
-        let new_initial_state = Box::pin(move || {
+        let new_initial_state = Box::new(move || {
             (self.initial_state)()
         });
 
