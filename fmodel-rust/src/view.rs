@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use crate::{EvolveFunction, InitialStateFunction};
 
 /// [View] represents the event handling algorithm, responsible for translating the events into denormalized state, which is more adequate for querying.
 /// It has two generic parameters `S`/State, `E`/Event , representing the type of the values that View may contain or use.
@@ -8,9 +8,9 @@ use std::pin::Pin;
 ///  - The function closures (e.g. evolve, initial_state) are defined to accept references with the same lifetime 'a, which ensures that they can reference the same data without any lifetime issues.
 pub struct View<'a, S: 'a, E: 'a> {
     /// The `evolve` function is the main state evolution algorithm.
-    pub evolve: Pin<Box<dyn Fn(&S, &E) -> S + 'a>>,
+    pub evolve: EvolveFunction<'a, S, E>,
     /// The `initial_state` function is the initial state.
-    pub initial_state: Pin<Box<dyn Fn() -> S + 'a>>,
+    pub initial_state: InitialStateFunction<'a, S>,
 }
 
 impl<'a, S, E> View<'a, S, E> {
@@ -58,15 +58,15 @@ impl<'a, S, E> View<'a, S, E> {
 
 pub trait ViewStateComputation<E, S> {
     /// Computes new state based on the current state and the events.
-    fn compute_new_state(&self, current_state: Option<S>, events: &Vec<&E>) -> S;
+    fn compute_new_state(&self, current_state: Option<S>, events: &[&E]) -> S;
 }
 
 impl<'a, S, E> ViewStateComputation<E, S> for View<'a, S, E> {
     /// Computes new state based on the current state and the events.
-    fn compute_new_state(&self, current_state: Option<S>, events: &Vec<&E>) -> S {
+    fn compute_new_state(&self, current_state: Option<S>, events: &[&E]) -> S {
         let effective_current_state = current_state.unwrap_or_else(|| (self.initial_state)());
-        events.into_iter().fold(effective_current_state, |state, event| {
-            (self.evolve)(&state, &event)
+        events.iter().fold(effective_current_state, |state, event| {
+            (self.evolve)(&state, event)
         })
     }
 }

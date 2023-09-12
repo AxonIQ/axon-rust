@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Display};
-
 use async_trait::async_trait;
 
 use crate::decider::{Decider, EventComputation, StateComputation};
@@ -14,7 +12,7 @@ pub trait EventRepository<C, E> {
     async fn fetch_events(&self, command: &C) -> Result<Vec<E>, Self::Error>;
 
     /// Saves events.
-    async fn save(&self, events: &Vec<E>) -> Result<Vec<E>, Self::Error>;
+    async fn save(&self, events: &[E]) -> Result<Vec<E>, Self::Error>;
 }
 
 /// Event sourcing aggregate is using/delegating a `decider` of type [IDecider]<[C], [S], [E]>/ [EventComputation]<[C], [S], [E]> to handle commands and produce events.

@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use crate::{DecideFunction, EvolveFunction, InitialStateFunction};
 
 /// [Decider] represents the main decision-making algorithm.
 /// It has three generic parameters `C`/`Command`, `S`/`State`, `E`/`Event` , representing the type of the values that Decider may contain or use.
@@ -8,13 +8,12 @@ use std::pin::Pin;
 ///  - The function closures (e.g., decide, evolve, initial_state) are defined to accept references with the same lifetime 'a, which ensures that they can reference the same data without any lifetime issues.
 pub struct Decider<'a, C: 'a, S: 'a, E: 'a> {
     /// The `decide` function is used to decide which events to produce based on the command and the current state.
-    pub decide: Pin<Box<dyn Fn(&C, &S) -> Vec<E> + 'a>>,
+    pub decide: DecideFunction<'a, C, S, E>,
     /// The `evolve` function is used to evolve the state based on the current state and the event.
-    pub evolve: Pin<Box<dyn Fn(&S, &E) -> S + 'a>>,
+    pub evolve: EvolveFunction<'a, S, E>,
     /// The `initial_state` function is used to produce the initial state of the decider.
-    pub initial_state: Pin<Box<dyn Fn() -> S + 'a>>,
+    pub initial_state: InitialStateFunction<'a, S>,
 }
-
 
 impl<'a, C, S, E> Decider<'a, C, S, E> {
     /// Creates a new instance of [Decider]`<C, S2, E>` by mapping the `decide` function to a new function that takes a `&C` and a `&S2` and returns a `Vec<E>`, and mapping the `evolve` function to a new function that takes a `&S2` and a `&E` and returns a `S`, and mapping the `initial_state` function to a new function that returns a `S2`.
@@ -51,7 +50,7 @@ impl<'a, C, S, E> Decider<'a, C, S, E> {
             F2: Fn(&E) -> E2,
     {
         let new_decide = Box::pin(move |c: &C, s: &S| {
-            (self.decide)(&c, s).into_iter().map(|e: E| { f2(&e) }).collect()
+            (self.decide)(c, s).into_iter().map(|e: E| { f2(&e) }).collect()
         });
 
         let new_evolve = Box::pin(move |s: &S, e2: &E2| {
@@ -100,7 +99,7 @@ impl<'a, C, S, E> Decider<'a, C, S, E> {
 /// Formalizes the `Event Computation` algorithm / event sourced system for the `decider` to handle commands based on the current events, and produce new events.
 pub trait EventComputation<C, E> {
     /// Computes new events based on the current events and the command.
-    fn compute_new_events(&self, current_events: &Vec<E>, command: &C) -> Vec<E>;
+    fn compute_new_events(&self, current_events: &[E], command: &C) -> Vec<E>;
 }
 
 
@@ -112,11 +111,11 @@ pub trait StateComputation<C, S> {
 
 impl<'a, C, S, E> EventComputation<C, E> for Decider<'a, C, S, E> {
     /// Computes new events based on the current events and the command.
-    fn compute_new_events(&self, current_events: &Vec<E>, command: &C) -> Vec<E> {
-        let current_state: S = current_events.into_iter().fold((self.initial_state)(), |state, event| {
-            (self.evolve)(&state, &event)
+    fn compute_new_events(&self, current_events: &[E], command: &C) -> Vec<E> {
+        let current_state: S = current_events.iter().fold((self.initial_state)(), |state, event| {
+            (self.evolve)(&state, event)
         });
-        (self.decide)(&command, &current_state)
+        (self.decide)(command, &current_state)
     }
 }
 

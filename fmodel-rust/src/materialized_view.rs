@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Display};
-
 use async_trait::async_trait;
 
 use crate::view::{View, ViewStateComputation};
@@ -31,7 +29,7 @@ impl<'a, S, E, R, Err> MaterializedView<'a, S, E, R, Err>
     /// Handles the event by fetching the state from the repository, computing new state based on the current state and the event, and saving the new state to the repository.
     pub async fn handle(&self, event: &E) -> Result<S, Err> {
         let state = self.repository.fetch_state(event).await?;
-        let new_state = self.view.compute_new_state(state, &vec![event]);
+        let new_state = self.view.compute_new_state(state, &[event]);
         let saved_state = self.repository.save(&new_state).await?;
         Ok(saved_state)
     }
