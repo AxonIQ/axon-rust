@@ -1,20 +1,20 @@
 use crate::cleanup::{
     remove_current_command_handlers, remove_current_event_handlers, remove_current_query_handlers,
 };
-use crate::command_handling::{command_route, issue_card, register_gift_card_command_handler};
+use crate::command_handling::{command_route, register_gift_card_command_handler};
 use crate::projection::{
     event_route, query_route, register_gift_card_event_handler, register_gift_card_query_handler,
 };
+use crate::rest_api::start_api;
 use once_cell::sync::Lazy;
 use synapse_client::apis::configuration::Configuration;
-use tokio::join;
-use tokio::time::{sleep, Duration};
 use warp::Filter;
 
 mod cleanup;
 mod command_handling;
 mod messages;
 mod projection;
+mod rest_api;
 mod warp_util;
 
 static CONFIGURATION: Lazy<Configuration> = Lazy::new(Configuration::new);
@@ -27,15 +27,17 @@ async fn main() {
     remove_current_command_handlers().await;
     remove_current_event_handlers().await;
     remove_current_query_handlers().await;
-    let handle = tokio::spawn(async move {
+    let handlers_handle = tokio::spawn(async move {
         start_listening().await;
+    });
+    let api_handle = tokio::spawn(async move {
+        start_api().await;
     });
     register_gift_card_command_handler().await;
     register_gift_card_event_handler().await;
     register_gift_card_query_handler().await;
-    sleep(Duration::from_secs(3)).await;
-    issue_card().await;
-    join!(handle).0.unwrap();
+    tokio::join!(api_handle).0.unwrap();
+    tokio::join!(handlers_handle).0.unwrap();
 }
 
 async fn start_listening() {

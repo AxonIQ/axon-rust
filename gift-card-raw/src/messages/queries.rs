@@ -19,8 +19,8 @@ pub struct FetchGiftCardSummary {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FetchGiftCardSummaries {
-    pub limit: i32,
-    pub offset: i32,
+    pub limit: u32,
+    pub offset: u32,
 }
 
 impl AxonMessage for FetchGiftCardSummary {

@@ -1,25 +1,20 @@
 use crate::messages::commands::{
-    to_command_message, AggregateCreationPolicy, CancelGiftCard, ContainsGiftCardCommand,
-    GiftCardCommand, IssueGiftCard, RedeemGiftCard,
+    AggregateCreationPolicy, CancelGiftCard, ContainsGiftCardCommand, GiftCardCommand,
+    IssueGiftCard, RedeemGiftCard,
 };
 use crate::messages::events::{
     to_publishable_event_message, ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent,
     GiftCardIssued, GiftCardRedeemed,
 };
-use crate::messages::queries::{to_query_message, FetchGiftCardSummaries, FetchGiftCardSummary};
 use crate::messages::AxonMessage;
 use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use moka::future::Cache;
 use once_cell::sync::Lazy;
-use std::time::Duration;
 use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::command_handlers_api::register_command_handler;
-use synapse_client::apis::commands_api::send_command_message;
 use synapse_client::apis::events_api::publish_event_message;
-use synapse_client::apis::queries_api::query_message;
 use synapse_client::models::{CommandHandlerRegistration, CommandMessage, ListOfEventMessages};
-use tokio::time::sleep;
 use warp::reply::{Json, WithStatus};
 use warp::Filter;
 
@@ -99,39 +94,6 @@ pub async fn register_gift_card_command_handler() {
     log::info!("Result of registering command handler: {:?}", result)
 }
 
-pub async fn issue_card() {
-    let command = IssueGiftCard {
-        id: String::from("0001"),
-        amount: 1000,
-    };
-    let command_message =
-        to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
-    let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    log::info!("Result of sending a command: {:?}", result);
-    sleep(Duration::from_secs(3)).await;
-    let command = IssueGiftCard {
-        id: String::from("0002"),
-        amount: 1000,
-    };
-    let command_message =
-        to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
-    let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    log::info!("Result of sending a command: {:?}", result);
-    let query = FetchGiftCardSummary {
-        id: "0001".to_string(),
-    };
-    let query_mes = to_query_message(FetchGiftCardSummary::name(), &query);
-    let result = query_message(&CONFIGURATION, CONTEXT, Some(query_mes)).await;
-    log::info!("Result of sending a query: {:?}", result);
-    let query = FetchGiftCardSummaries {
-        limit: 1,
-        offset: 0,
-    };
-    let query_mes = to_query_message(FetchGiftCardSummaries::name(), &query);
-    let result = query_message(&CONFIGURATION, CONTEXT, Some(query_mes)).await;
-    log::info!("Result of sending a multi query: {:?}", result);
-}
-
 pub async fn aggregate_events(aggregate_id: &str) -> ListOfEventMessages {
     read_aggregate_events(&CONFIGURATION, CONTEXT, aggregate_id)
         .await
@@ -156,7 +118,7 @@ impl GiftCardAggregate {
         }
     }
     fn cancel(&mut self) {
-        self.canceled = false;
+        self.canceled = true;
         self.sequence_identifier += 1;
     }
     fn redeem(&mut self, amount: u32) {
@@ -263,7 +225,11 @@ impl GiftCardCommand {
     async fn add(&self, aggregate: GiftCardAggregate) -> Result<GiftCardAggregate, HandlerResult> {
         match self {
             GiftCardCommand::Redeem(r) => {
-                if r.amount > aggregate.remaining_amount {
+                if aggregate.canceled {
+                    Err(HandlerResult::bad_request(String::from(
+                        "Card is already canceled.",
+                    )))
+                } else if r.amount > aggregate.remaining_amount {
                     Err(HandlerResult::bad_request(format!(
                         "Amount left on the card: {} is less than amount to redeem: {}.",
                         aggregate.remaining_amount, r.amount
@@ -273,7 +239,7 @@ impl GiftCardCommand {
                         id: aggregate.id.clone(),
                         amount: r.amount,
                     });
-                    apply_event(event, None).await
+                    apply_event(event, Some(aggregate)).await
                 }
             }
             GiftCardCommand::Cancel(_) => {
@@ -289,7 +255,7 @@ impl GiftCardCommand {
                     let event = GiftCardEvent::Cancel(GiftCardCanceled {
                         id: aggregate.id.clone(),
                     });
-                    apply_event(event, None).await
+                    apply_event(event, Some(aggregate)).await
                 }
             }
             _ => unreachable!(),

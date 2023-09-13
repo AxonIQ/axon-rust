@@ -1,0 +1,18 @@
+POST http://localhost:8090/issue/id/0001/amount/1000
+Content-Type: application/json
+
+###
+POST http://localhost:8090/redeem/id/0001/amount/10
+Content-Type: application/json
+
+###
+POST http://localhost:8090/cancel/id/0001
+Content-Type: application/json
+
+###
+GET http://localhost:8090/query/id/0001
+Content-Type: application/json
+
+###
+GET http://localhost:8090/query/limit/10/offset/0
+Content-Type: application/json
