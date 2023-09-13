@@ -1,0 +1,13 @@
+POST http://localhost:3030/commands
+Content-Type: application/json
+
+{
+  "id": "0001",
+  "name": "IssueGiftCard"
+}
+
+###
+POST http://localhost:3030/events
+Content-Type: application/vnd.axoniq.event.list+json
+
+{"items":[{"name":"GiftCardIssued","aggregateId":"0001","aggregateType":"GiftCardAggregate","sequenceNumber":0,"dateTime":1694590747.534000000,"index":0,"id":"34259d62-1dcf-4c93-9f99-0569681abb25","metaData":{},"payload":{"amount":1000,"id":"0001"},"payloadType":"GiftCardIssued","payloadRevision":null},{"name":"GiftCardIssued","aggregateId":"0002","aggregateType":"GiftCardAggregate","sequenceNumber":0,"dateTime":1694590750.657000000,"index":1,"id":"84ed6f4f-c5f2-4ded-87c0-3f813410a9f4","metaData":{},"payload":{"amount":1000,"id":"0002"},"payloadType":"GiftCardIssued","payloadRevision":null}]}

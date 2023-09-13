@@ -1,5 +1,5 @@
 use serde_derive::Serialize;
-use synapse_client::models::{CommandMessage, CommandResponseMessage};
+use synapse_client::models::{CommandMessage, CommandResponseMessage, QueryResponseMessage};
 use warp::http::StatusCode;
 use warp::reply;
 use warp::reply::{Json, WithStatus};
@@ -17,6 +17,7 @@ pub enum HandlerResult {
     Error(HandlerErrorMessage),
     CommandSuccess(CommandMessage),
     EventSuccess,
+    QuerySuccess(serde_json::Value),
 }
 
 impl HandlerResult {
@@ -41,6 +42,17 @@ impl HandlerResult {
                 let cr = Empty {};
                 let rep = reply::json(&cr);
                 reply::with_status(rep, StatusCode::OK)
+            }
+            HandlerResult::QuerySuccess(result) => {
+                let response_message = QueryResponseMessage {
+                    id: None,
+                    meta_data: None,
+                    payload: Some(Some(result)),
+                    payload_type: None,
+                    payload_revision: None,
+                };
+                let reply = reply::json(&response_message);
+                reply::with_status(reply, StatusCode::OK)
             }
         }
     }

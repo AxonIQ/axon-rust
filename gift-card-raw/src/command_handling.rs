@@ -6,6 +6,7 @@ use crate::messages::events::{
     to_publishable_event_message, ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent,
     GiftCardIssued, GiftCardRedeemed,
 };
+use crate::messages::queries::{to_query_message, FetchGiftCardSummaries, FetchGiftCardSummary};
 use crate::messages::AxonMessage;
 use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
@@ -16,6 +17,7 @@ use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::command_handlers_api::register_command_handler;
 use synapse_client::apis::commands_api::send_command_message;
 use synapse_client::apis::events_api::publish_event_message;
+use synapse_client::apis::queries_api::query_message;
 use synapse_client::models::{CommandHandlerRegistration, CommandMessage, ListOfEventMessages};
 use tokio::time::sleep;
 use warp::reply::{Json, WithStatus};
@@ -34,11 +36,11 @@ impl GiftCardCommandModel {
         }
     }
     pub async fn handle_command(&self, command_message: CommandMessage) -> HandlerResult {
-        println!("received command: {:?}", command_message);
+        log::info!("received command: {:?}", command_message);
         let gift_card_command = command_message.get_gift_card_command().unwrap();
-        println!("turned to gift card command: {:?}", gift_card_command);
+        log::info!("turned to gift card command: {:?}", gift_card_command);
         let aggregate_id = gift_card_command.get_aggregate_id();
-        println!("used aggregate id: {}", aggregate_id);
+        log::info!("used aggregate id: {}", aggregate_id);
         let state = match self.cache.get(&*aggregate_id) {
             None => {
                 let list = aggregate_events(aggregate_id.as_str()).await;
@@ -46,10 +48,10 @@ impl GiftCardCommandModel {
             }
             Some(s) => Some(s),
         };
-        println!("current state: {:?}", state);
+        log::info!("current state: {:?}", state);
         match gift_card_command.apply(state).await {
             Ok(a) => {
-                println!("updated state: {:?}", a);
+                log::info!("updated state: {:?}", a);
                 self.cache.insert(aggregate_id, a).await;
                 HandlerResult::CommandSuccess(command_message)
             }
@@ -94,27 +96,40 @@ pub async fn register_gift_card_command_handler() {
     let result = register_command_handler(&CONFIGURATION, CONTEXT, Some(registration))
         .await
         .unwrap();
-    println!("Result of registering command handlers: {:?}", result)
+    log::info!("Result of registering command handler: {:?}", result)
 }
 
 pub async fn issue_card() {
     let command = IssueGiftCard {
-        id: String::from("0010"),
+        id: String::from("0001"),
         amount: 1000,
     };
     let command_message =
         to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
     let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    println!("Result of sending a command: {:?}", result);
+    log::info!("Result of sending a command: {:?}", result);
     sleep(Duration::from_secs(3)).await;
     let command = IssueGiftCard {
-        id: String::from("0011"),
+        id: String::from("0002"),
         amount: 1000,
     };
     let command_message =
         to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
     let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    println!("Result of sending a command: {:?}", result)
+    log::info!("Result of sending a command: {:?}", result);
+    let query = FetchGiftCardSummary {
+        id: "0001".to_string(),
+    };
+    let query_mes = to_query_message(FetchGiftCardSummary::name(), &query);
+    let result = query_message(&CONFIGURATION, CONTEXT, Some(query_mes)).await;
+    log::info!("Result of sending a query: {:?}", result);
+    let query = FetchGiftCardSummaries {
+        limit: 1,
+        offset: 0,
+    };
+    let query_mes = to_query_message(FetchGiftCardSummaries::name(), &query);
+    let result = query_message(&CONFIGURATION, CONTEXT, Some(query_mes)).await;
+    log::info!("Result of sending a multi query: {:?}", result);
 }
 
 pub async fn aggregate_events(aggregate_id: &str) -> ListOfEventMessages {
@@ -151,7 +166,7 @@ impl GiftCardAggregate {
 }
 
 fn into_aggregate_state(list: ListOfEventMessages) -> Option<GiftCardAggregate> {
-    println!("current list: {:?}", list);
+    log::info!("current list: {:?}", list);
     match list.items {
         None => None,
         Some(l) if l.is_empty() => None,
