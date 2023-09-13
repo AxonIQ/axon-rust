@@ -49,11 +49,11 @@ impl ToGiftCardEvent for EventMessage {
 }
 
 pub trait ToEventMessage {
-    fn to_event_message(&self) -> PublishableEventMessage;
+    fn to_event_message(&self, version: i64) -> PublishableEventMessage;
 }
 
 impl ToEventMessage for GiftCardEvent {
-    fn to_event_message(&self) -> PublishableEventMessage {
+    fn to_event_message(&self, version: i64) -> PublishableEventMessage {
         match self {
             GiftCardEvent::Issue(evt) => {
                 let event = serde_json::to_value(evt).unwrap();
@@ -62,7 +62,7 @@ impl ToEventMessage for GiftCardEvent {
                     name: "GiftCardIssued".to_string(),
                     aggregate_id: Some(evt.id.to_owned()),
                     aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: None, // TODO: how to get this?
+                    sequence_number: Some(version),
                     date_time: None,
                     index: None,
                     id: None,
@@ -78,7 +78,7 @@ impl ToEventMessage for GiftCardEvent {
                     name: "GiftCardRedeemed".to_string(),
                     aggregate_id: Some(evt.id.to_owned()),
                     aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: None, // TODO: how to get this?
+                    sequence_number: Some(version),
                     date_time: None,
                     index: None,
                     id: None,
@@ -94,7 +94,7 @@ impl ToEventMessage for GiftCardEvent {
                     name: "GiftCardCanceled".to_string(),
                     aggregate_id: Some(evt.id.to_owned()),
                     aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: None, // TODO: how to get this?
+                    sequence_number: Some(version),
                     date_time: None,
                     index: None,
                     id: None,
@@ -136,12 +136,10 @@ impl EventRepository<GiftCardCommand, GiftCardEvent> for AxonServerEventReposito
         let mut saved_events: Vec<(GiftCardEvent, i64)> = vec![];
         let mut version = version.unwrap_or(-1);
         for evt in events {
-            let result = publish_event_message(&self.configuration, &self.context, Some(evt.to_event_message())).await;
+            version += 1;
+            let result = publish_event_message(&self.configuration, &self.context, Some(evt.to_event_message(version))).await;
             match result {
-                Ok(_) => {
-                    version += 1;
-                    saved_events.push((evt.to_owned(), version))
-                }
+                Ok(_) => { saved_events.push((evt.to_owned(), version)) }
                 Err(err) => return Err(AggregateError::SaveEvents(err.to_string())),
             };
         }
