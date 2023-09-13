@@ -1,6 +1,6 @@
 use crate::messages::commands::{
-    to_command_message, AggregateCreationPolicy, CancelGiftCard, ContainsGiftCardCommand,
-    GiftCardCommand, IssueGiftCard, RedeemGiftCard,
+    AggregateCreationPolicy, CancelGiftCard, ContainsGiftCardCommand, GiftCardCommand,
+    IssueGiftCard, RedeemGiftCard,
 };
 use crate::messages::events::{
     to_publishable_event_message, ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent,
@@ -11,13 +11,10 @@ use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use moka::future::Cache;
 use once_cell::sync::Lazy;
-use std::time::Duration;
 use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::command_handlers_api::register_command_handler;
-use synapse_client::apis::commands_api::send_command_message;
 use synapse_client::apis::events_api::publish_event_message;
 use synapse_client::models::{CommandHandlerRegistration, CommandMessage, ListOfEventMessages};
-use tokio::time::sleep;
 use warp::reply::{Json, WithStatus};
 use warp::Filter;
 
@@ -34,11 +31,11 @@ impl GiftCardCommandModel {
         }
     }
     pub async fn handle_command(&self, command_message: CommandMessage) -> HandlerResult {
-        println!("received command: {:?}", command_message);
+        log::info!("received command: {:?}", command_message);
         let gift_card_command = command_message.get_gift_card_command().unwrap();
-        println!("turned to gift card command: {:?}", gift_card_command);
+        log::info!("turned to gift card command: {:?}", gift_card_command);
         let aggregate_id = gift_card_command.get_aggregate_id();
-        println!("used aggregate id: {}", aggregate_id);
+        log::info!("used aggregate id: {}", aggregate_id);
         let state = match self.cache.get(&*aggregate_id) {
             None => {
                 let list = aggregate_events(aggregate_id.as_str()).await;
@@ -46,10 +43,10 @@ impl GiftCardCommandModel {
             }
             Some(s) => Some(s),
         };
-        println!("current state: {:?}", state);
+        log::info!("current state: {:?}", state);
         match gift_card_command.apply(state).await {
             Ok(a) => {
-                println!("updated state: {:?}", a);
+                log::info!("updated state: {:?}", a);
                 self.cache.insert(aggregate_id, a).await;
                 HandlerResult::CommandSuccess(command_message)
             }
@@ -94,27 +91,7 @@ pub async fn register_gift_card_command_handler() {
     let result = register_command_handler(&CONFIGURATION, CONTEXT, Some(registration))
         .await
         .unwrap();
-    println!("Result of registering command handlers: {:?}", result)
-}
-
-pub async fn issue_card() {
-    let command = IssueGiftCard {
-        id: String::from("0010"),
-        amount: 1000,
-    };
-    let command_message =
-        to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
-    let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    println!("Result of sending a command: {:?}", result);
-    sleep(Duration::from_secs(3)).await;
-    let command = IssueGiftCard {
-        id: String::from("0011"),
-        amount: 1000,
-    };
-    let command_message =
-        to_command_message(IssueGiftCard::name(), Some(String::from("0002")), &command);
-    let result = send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await;
-    println!("Result of sending a command: {:?}", result)
+    log::info!("Result of registering command handler: {:?}", result)
 }
 
 pub async fn aggregate_events(aggregate_id: &str) -> ListOfEventMessages {
@@ -141,7 +118,7 @@ impl GiftCardAggregate {
         }
     }
     fn cancel(&mut self) {
-        self.canceled = false;
+        self.canceled = true;
         self.sequence_identifier += 1;
     }
     fn redeem(&mut self, amount: u32) {
@@ -151,7 +128,7 @@ impl GiftCardAggregate {
 }
 
 fn into_aggregate_state(list: ListOfEventMessages) -> Option<GiftCardAggregate> {
-    println!("current list: {:?}", list);
+    log::info!("current list: {:?}", list);
     match list.items {
         None => None,
         Some(l) if l.is_empty() => None,
@@ -248,7 +225,11 @@ impl GiftCardCommand {
     async fn add(&self, aggregate: GiftCardAggregate) -> Result<GiftCardAggregate, HandlerResult> {
         match self {
             GiftCardCommand::Redeem(r) => {
-                if r.amount > aggregate.remaining_amount {
+                if aggregate.canceled {
+                    Err(HandlerResult::bad_request(String::from(
+                        "Card is already canceled.",
+                    )))
+                } else if r.amount > aggregate.remaining_amount {
                     Err(HandlerResult::bad_request(format!(
                         "Amount left on the card: {} is less than amount to redeem: {}.",
                         aggregate.remaining_amount, r.amount
@@ -258,7 +239,7 @@ impl GiftCardCommand {
                         id: aggregate.id.clone(),
                         amount: r.amount,
                     });
-                    apply_event(event, None).await
+                    apply_event(event, Some(aggregate)).await
                 }
             }
             GiftCardCommand::Cancel(_) => {
@@ -274,7 +255,7 @@ impl GiftCardCommand {
                     let event = GiftCardEvent::Cancel(GiftCardCanceled {
                         id: aggregate.id.clone(),
                     });
-                    apply_event(event, None).await
+                    apply_event(event, Some(aggregate)).await
                 }
             }
             _ => unreachable!(),
