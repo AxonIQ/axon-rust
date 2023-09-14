@@ -9,7 +9,7 @@ use synapse_client::models::{EventMessage, PublishableEventMessage};
 
 use fmodel_rust::aggregate::EventRepository;
 
-use crate::api::{GiftCardCanceled, GiftCardCommand, GiftCardEvent, GiftCardIssued, GiftCardRedeemed};
+use crate::api::{GiftCardCommand, GiftCardEvent};
 
 /// Error type for the application/aggregate
 #[derive(Debug, Display)]
@@ -23,95 +23,55 @@ pub enum AggregateError {
 
 impl Error for AggregateError {}
 
+/// Map to domain events of type GiftCardEvent
 pub trait ToGiftCardEvent {
     fn to_gift_card_event(&self) -> Option<GiftCardEvent>;
 }
 
+/// Map from Axon EventMessage to domain events of type GiftCardEvent
 impl ToGiftCardEvent for EventMessage {
     fn to_gift_card_event(&self) -> Option<GiftCardEvent> {
         let value = self.payload.clone().unwrap().unwrap();
-        match self.name.as_str() {
-            "GiftCardIssued" => {
-                let issue_gift_card: GiftCardIssued = serde_json::from_value(value).unwrap();
-                Some(GiftCardEvent::Issue(issue_gift_card))
-            }
-            "GiftCardRedeemed" => {
-                let redeem_gift_card: GiftCardRedeemed = serde_json::from_value(value).unwrap();
-                Some(GiftCardEvent::Redeem(redeem_gift_card))
-            }
-            "GiftCardCanceled" => {
-                let cancel_gift_card: GiftCardCanceled = serde_json::from_value(value).unwrap();
-                Some(GiftCardEvent::Cancel(cancel_gift_card))
-            }
-            _ => None,
+        let event = serde_json::from_value(value);
+        match event {
+            Ok(event) => { Some(event) }
+            Err(_err) => { return None; }
         }
     }
 }
 
+/// Map to Axon EventMessage
 pub trait ToEventMessage {
     fn to_event_message(&self, version: i64) -> PublishableEventMessage;
 }
 
+/// Map from domain events of type GiftCardEvent to Axon EventMessage
 impl ToEventMessage for GiftCardEvent {
     fn to_event_message(&self, version: i64) -> PublishableEventMessage {
-        match self {
-            GiftCardEvent::Issue(evt) => {
-                let event = serde_json::to_value(evt).unwrap();
-                PublishableEventMessage {
-                    payload_type: Some("GiftCardIssued".to_string()),
-                    name: "GiftCardIssued".to_string(),
-                    aggregate_id: Some(evt.id.to_owned()),
-                    aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: Some(version),
-                    date_time: None,
-                    index: None,
-                    id: None,
-                    meta_data: None,
-                    payload: Some(Some(event)),
-                    payload_revision: None,
-                }
-            }
-            GiftCardEvent::Redeem(evt) => {
-                let event = serde_json::to_value(evt).unwrap();
-                PublishableEventMessage {
-                    payload_type: Some("GiftCardRedeemed".to_string()),
-                    name: "GiftCardRedeemed".to_string(),
-                    aggregate_id: Some(evt.id.to_owned()),
-                    aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: Some(version),
-                    date_time: None,
-                    index: None,
-                    id: None,
-                    meta_data: None,
-                    payload: Some(Some(event)),
-                    payload_revision: None,
-                }
-            }
-            GiftCardEvent::Cancel(evt) => {
-                let event = serde_json::to_value(evt).unwrap();
-                PublishableEventMessage {
-                    payload_type: Some("GiftCardCanceled".to_string()),
-                    name: "GiftCardCanceled".to_string(),
-                    aggregate_id: Some(evt.id.to_owned()),
-                    aggregate_type: Some("GiftCard".to_string()),
-                    sequence_number: Some(version),
-                    date_time: None,
-                    index: None,
-                    id: None,
-                    meta_data: None,
-                    payload: Some(Some(event)),
-                    payload_revision: None,
-                }
-            }
+        let payload = serde_json::to_value(self).unwrap();
+        PublishableEventMessage {
+            payload_type: Some(self.payload_type()),
+            name: self.payload_type(),
+            aggregate_id: Some(self.id()),
+            aggregate_type: Some(self.aggregate_type()),
+            sequence_number: Some(version),
+            date_time: None,
+            index: None,
+            id: None,
+            meta_data: None,
+            payload: Some(Some(payload)),
+            payload_revision: None,
         }
     }
 }
 
+/// Axon Server event repository
 pub struct AxonServerEventRepository {
     pub configuration: configuration::Configuration,
     pub context: String,
 }
 
+/// Event repository implementation for Axon Server
 #[async_trait]
 impl EventRepository<GiftCardCommand, GiftCardEvent> for AxonServerEventRepository {
     type Error = AggregateError;

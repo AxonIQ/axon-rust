@@ -14,10 +14,12 @@ pub fn decider<'a>() -> Decider<'a, GiftCardCommand, GiftCardState, GiftCardEven
         decide: Box::new(|command, state| {
             match command {
                 GiftCardCommand::Issue(cmd) => {
-                    vec![GiftCardEvent::Issue(GiftCardIssued {
-                        id: cmd.id.to_owned(),
-                        amount: cmd.amount,
-                    })]
+                    if state.id == "0".to_string() {
+                        vec![GiftCardEvent::Issue(GiftCardIssued {
+                            id: cmd.id.to_owned(),
+                            amount: cmd.amount,
+                        })]
+                    } else { vec![] }
                 }
                 GiftCardCommand::Redeem(cmd) => {
                     if state.id == cmd.id {

@@ -1,5 +1,17 @@
 use serde_derive::{Deserialize, Serialize};
 
+// ########################################
+// ############### Commands ###############
+// ########################################
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum GiftCardCommand {
+    Issue(IssueGiftCard),
+    Redeem(RedeemGiftCard),
+    Cancel(CancelGiftCard),
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IssueGiftCard {
     pub id: String,
@@ -17,13 +29,6 @@ pub struct CancelGiftCard {
     pub id: String,
 }
 
-#[derive(Debug)]
-pub enum GiftCardCommand {
-    Issue(IssueGiftCard),
-    Redeem(RedeemGiftCard),
-    Cancel(CancelGiftCard),
-}
-
 impl GiftCardCommand {
     pub fn id(&self) -> String {
         match self {
@@ -34,6 +39,17 @@ impl GiftCardCommand {
     }
 }
 
+// ########################################
+// ################ Events ################
+// ########################################
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
+pub enum GiftCardEvent {
+    Issue(GiftCardIssued),
+    Redeem(GiftCardRedeemed),
+    Cancel(GiftCardCanceled),
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GiftCardIssued {
@@ -52,9 +68,28 @@ pub struct GiftCardCanceled {
     pub id: String,
 }
 
-#[derive(Debug, Clone)]
-pub enum GiftCardEvent {
-    Issue(GiftCardIssued),
-    Redeem(GiftCardRedeemed),
-    Cancel(GiftCardCanceled),
+impl GiftCardEvent {
+    pub fn id(&self) -> String {
+        match self {
+            GiftCardEvent::Issue(c) => c.id.to_owned().to_string(),
+            GiftCardEvent::Redeem(c) => c.id.to_owned().to_string(),
+            GiftCardEvent::Cancel(c) => c.id.to_owned().to_string(),
+        }
+    }
+}
+
+impl GiftCardEvent {
+    pub fn payload_type(&self) -> String {
+        match self {
+            GiftCardEvent::Issue(_c) => "GiftCardIssued".to_string(),
+            GiftCardEvent::Redeem(_c) => "GiftCardRedeemed".to_string(),
+            GiftCardEvent::Cancel(_c) => "GiftCardCanceled".to_string(),
+        }
+    }
+}
+
+impl GiftCardEvent {
+    pub fn aggregate_type(&self) -> String {
+        "GiftCard".to_string()
+    }
 }
