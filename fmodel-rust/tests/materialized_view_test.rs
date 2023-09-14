@@ -76,33 +76,13 @@ impl ViewStateRepository<OrderEvent, OrderViewState> for InMemoryViewOrderStateR
     type Error = MaterializedViewError;
 
     async fn fetch_state(&self, event: &OrderEvent) -> Result<Option<OrderViewState>, MaterializedViewError> {
-        match event {
-            OrderEvent::Created(order_created) => {
-                let order_id = order_created.order_id;
-                Ok(
-                    self.states.lock().unwrap()
-                        .get(&order_id)
-                        .cloned()
-                )
-            }
-            OrderEvent::Updated(order_updated) => {
-                let order_id = order_updated.order_id;
-                Ok(
-                    self.states.lock().unwrap()
-                        .get(&order_id)
-                        .cloned()
-                )
-            }
-            OrderEvent::Cancelled(order_canceled) => {
-                let order_id = order_canceled.order_id;
-                Ok(
-                    self.states.lock().unwrap()
-                        .get(&order_id)
-                        .cloned()
-                )
-            }
-        }
+        Ok(
+            self.states.lock().unwrap()
+                .get(&event.id())
+                .cloned()
+        )
     }
+
     async fn save(&self, state: &OrderViewState) -> Result<OrderViewState, MaterializedViewError> {
         self.states.lock().unwrap().insert(state.order_id, state.clone());
         Ok(state.clone())

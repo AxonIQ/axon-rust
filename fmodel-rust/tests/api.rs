@@ -26,11 +26,11 @@ pub struct CancelOrderCommand {
 
 impl OrderCommand {
     #[allow(dead_code)]
-    pub fn id(&self) -> String {
+    pub fn id(&self) -> u32 {
         match self {
-            OrderCommand::Create(c) => c.order_id.to_owned().to_string(),
-            OrderCommand::Update(c) => c.order_id.to_owned().to_string(),
-            OrderCommand::Cancel(c) => c.order_id.to_owned().to_string(),
+            OrderCommand::Create(c) => c.order_id.to_owned(),
+            OrderCommand::Update(c) => c.order_id.to_owned(),
+            OrderCommand::Cancel(c) => c.order_id.to_owned(),
         }
     }
 }
@@ -62,11 +62,11 @@ pub struct OrderCancelledEvent {
 
 impl OrderEvent {
     #[allow(dead_code)]
-    pub fn id(&self) -> String {
+    pub fn id(&self) -> u32 {
         match self {
-            OrderEvent::Created(c) => c.order_id.to_owned().to_string(),
-            OrderEvent::Updated(c) => c.order_id.to_owned().to_string(),
-            OrderEvent::Cancelled(c) => c.order_id.to_owned().to_string(),
+            OrderEvent::Created(c) => c.order_id.to_owned(),
+            OrderEvent::Updated(c) => c.order_id.to_owned(),
+            OrderEvent::Cancelled(c) => c.order_id.to_owned(),
         }
     }
 }
