@@ -1,6 +1,5 @@
 use crate::messages::commands::{
-    AggregateCreationPolicy, CancelGiftCard, ContainsGiftCardCommand, GiftCardCommand,
-    IssueGiftCard, RedeemGiftCard,
+    CancelGiftCard, ContainsGiftCardCommand, GiftCardCommand, IssueGiftCard, RedeemGiftCard,
 };
 use crate::messages::events::{
     to_publishable_event_message, ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent,
@@ -44,15 +43,18 @@ impl GiftCardCommandModel {
             Some(s) => Some(s),
         };
         log::info!("current state: {:?}", state);
-        match gift_card_command.apply(state).await {
-            Ok(a) => {
-                log::info!("updated state: {:?}", a);
-                self.cache.insert(aggregate_id, a).await;
-                HandlerResult::CommandSuccess(command_message)
-            }
+        match gift_card_command.execute(&state) {
+            Ok(event) => match publish_event(event, state).await {
+                Ok(new_state) => {
+                    log::info!("updated state: {:?}", new_state);
+                    self.cache.insert(aggregate_id, new_state).await;
+                    HandlerResult::CommandSuccess(command_message)
+                }
+                Err(e) => e,
+            },
             Err(e) => {
                 self.cache.remove(&*aggregate_id).await;
-                e
+                HandlerResult::bad_request(e)
             }
         }
     }
@@ -179,113 +181,74 @@ impl GiftCardEvent {
 }
 
 impl GiftCardCommand {
-    async fn apply(
+    fn execute(
         &self,
-        aggregate: Option<GiftCardAggregate>,
-    ) -> Result<GiftCardAggregate, HandlerResult> {
-        match self.get_creation_policy() {
-            AggregateCreationPolicy::Always => match aggregate {
-                None => self.start().await,
-                Some(a) => Err(HandlerResult::bad_request(format!(
-                    "Expected no current aggregate, but was: {:?}.",
-                    a
-                ))),
-            },
-            AggregateCreationPolicy::CreateIfMissing => match aggregate {
-                None => self.start().await,
-                Some(a) => self.add(a).await,
-            },
-            AggregateCreationPolicy::Never => match aggregate {
-                None => Err(HandlerResult::bad_request(String::from(
-                    "Expected there was already an aggregate present, but this was not the case.",
-                ))),
-                Some(a) => self.add(a).await,
-            },
-        }
-    }
-    async fn start(&self) -> Result<GiftCardAggregate, HandlerResult> {
+        optional_aggregate: &Option<GiftCardAggregate>,
+    ) -> Result<GiftCardEvent, String> {
         match self {
             GiftCardCommand::Issue(i) => {
+                if let Some(a) = optional_aggregate {
+                    return Err(format!("Card already exist, current state is: {:?}.", a));
+                };
                 if i.amount < 10 {
-                    Err(HandlerResult::bad_request(format!(
+                    Err(format!(
                         "Amount should be at least 10, but was: {}.",
                         i.amount
-                    )))
+                    ))
                 } else {
-                    let event = GiftCardEvent::Issue(GiftCardIssued {
+                    Ok(GiftCardEvent::Issue(GiftCardIssued {
                         id: i.id.clone(),
                         amount: i.amount,
-                    });
-                    apply_event(event, None).await
+                    }))
                 }
             }
-            _ => unreachable!(),
-        }
-    }
-    async fn add(&self, aggregate: GiftCardAggregate) -> Result<GiftCardAggregate, HandlerResult> {
-        match self {
             GiftCardCommand::Redeem(r) => {
+                let aggregate = match optional_aggregate {
+                    Some(a) => a,
+                    None => return Err(String::from("There is not yet a card to redeem from.")),
+                };
                 if aggregate.canceled {
-                    Err(HandlerResult::bad_request(String::from(
-                        "Card is already canceled.",
-                    )))
+                    Err(String::from("Card is already canceled."))
                 } else if r.amount > aggregate.remaining_amount {
-                    Err(HandlerResult::bad_request(format!(
+                    Err(format!(
                         "Amount left on the card: {} is less than amount to redeem: {}.",
                         aggregate.remaining_amount, r.amount
-                    )))
+                    ))
                 } else {
-                    let event = GiftCardEvent::Redeem(GiftCardRedeemed {
+                    Ok(GiftCardEvent::Redeem(GiftCardRedeemed {
                         id: aggregate.id.clone(),
                         amount: r.amount,
-                    });
-                    apply_event(event, Some(aggregate)).await
+                    }))
                 }
             }
             GiftCardCommand::Cancel(_) => {
+                let aggregate = match optional_aggregate {
+                    Some(a) => a,
+                    None => return Err(String::from("There is not yet a card to cancel.")),
+                };
                 if aggregate.canceled {
-                    Err(HandlerResult::bad_request(String::from(
-                        "Card was already canceled.",
-                    )))
+                    Err(String::from("Card was already canceled."))
                 } else if aggregate.remaining_amount == 0 {
-                    Err(HandlerResult::bad_request(String::from(
+                    Err(String::from(
                         "Card has nothing left, so it can't be cancelled",
-                    )))
+                    ))
                 } else {
-                    let event = GiftCardEvent::Cancel(GiftCardCanceled {
+                    Ok(GiftCardEvent::Cancel(GiftCardCanceled {
                         id: aggregate.id.clone(),
-                    });
-                    apply_event(event, Some(aggregate)).await
+                    }))
                 }
             }
-            _ => unreachable!(),
         }
     }
 }
 
-async fn apply_event(
+async fn publish_event(
     event: GiftCardEvent,
     aggregate: Option<GiftCardAggregate>,
 ) -> Result<GiftCardAggregate, HandlerResult> {
     let name = event.get_name();
     let payload = event.get_payload();
-    let new_aggregate = match aggregate {
-        None => match event {
-            GiftCardEvent::Issue(i) => GiftCardAggregate::new(&i),
-            _ => unreachable!(),
-        },
-        Some(mut a) => match event {
-            GiftCardEvent::Redeem(r) => {
-                a.redeem(r.amount);
-                a
-            }
-            GiftCardEvent::Cancel(_) => {
-                a.cancel();
-                a
-            }
-            _ => unreachable!(),
-        },
-    };
+    let new_aggregate = event.apply(aggregate).unwrap();
     let event_message = to_publishable_event_message(
         name,
         Some(new_aggregate.id.clone()),

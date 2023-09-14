@@ -111,7 +111,7 @@ impl ContainsGiftCardEvent for EventMessage {
                 let gift_card_redeemed: GiftCardRedeemed = serde_json::from_value(value).unwrap();
                 Some(GiftCardEvent::Redeem(gift_card_redeemed))
             }
-            "GiftCardCancelled" => {
+            "GiftCardCanceled" => {
                 let gift_card_cancelled: GiftCardCanceled = serde_json::from_value(value).unwrap();
                 Some(GiftCardEvent::Cancel(gift_card_cancelled))
             }

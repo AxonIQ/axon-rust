@@ -6,7 +6,7 @@ use crate::messages::queries::{
     GiftCardSummary,
 };
 use crate::messages::AxonMessage;
-use crate::warp_util::HandlerResult;
+use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use dashmap::DashMap;
 use elsa::sync::FrozenVec;
@@ -37,10 +37,18 @@ impl GiftCardProjection {
         log::debug!("received events: {:?}", events);
         for e in events.items.unwrap() {
             let date_time = e.date_time.clone().unwrap();
-            match e.get_gift_card_event().unwrap() {
-                GiftCardEvent::Issue(i) => self.handle_issued(i, date_time),
-                GiftCardEvent::Redeem(r) => self.handle_redeemed(r, date_time),
-                GiftCardEvent::Cancel(c) => self.handle_canceled(c, date_time),
+            match e.get_gift_card_event() {
+                None => {
+                    return HandlerResult::Error(HandlerErrorMessage {
+                        code: 400,
+                        message: format!("Unknown event with name: {}", e.name),
+                    })
+                }
+                Some(e) => match e {
+                    GiftCardEvent::Issue(i) => self.handle_issued(i, date_time),
+                    GiftCardEvent::Redeem(r) => self.handle_redeemed(r, date_time),
+                    GiftCardEvent::Cancel(c) => self.handle_canceled(c, date_time),
+                },
             }
         }
         HandlerResult::EventSuccess
@@ -78,23 +86,18 @@ impl GiftCardProjection {
         let mut result_list = vec![];
         let max_size = query.limit as usize;
         let mut index = query.offset as usize;
-        log::info!("item in list: {:?}", self.keys.get(0));
         while result_list.len() != max_size {
             match self.keys.get(index) {
                 Some(key) => {
-                    log::info!("found");
                     let item = self.gift_cards.get(key).unwrap();
                     result_list.push(serde_json::to_value(item.value()).unwrap());
                     index += 1;
                 }
-                None => {
-                    log::info!("not found");
-                    break;
-                }
+                None => break,
             }
         }
         let items = serde_json::Value::Array(result_list);
-        log::info!("items in list: {}", items);
+        log::debug!("items in list: {}", items);
         let mut map = serde_json::Map::new();
         map.insert(String::from("items"), items);
         map.insert(

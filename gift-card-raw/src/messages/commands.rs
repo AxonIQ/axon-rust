@@ -19,16 +19,6 @@ pub struct CancelGiftCard {
     pub id: String,
 }
 
-pub enum AggregateCreationPolicy {
-    Always,
-    CreateIfMissing,
-    Never,
-}
-
-pub trait AxonCommand {
-    fn creation_policy() -> AggregateCreationPolicy;
-}
-
 impl AxonMessage for IssueGiftCard {
     fn name() -> &'static str {
         "IssueGiftCard"
@@ -47,24 +37,6 @@ impl AxonMessage for CancelGiftCard {
     }
 }
 
-impl AxonCommand for IssueGiftCard {
-    fn creation_policy() -> AggregateCreationPolicy {
-        AggregateCreationPolicy::Always
-    }
-}
-
-impl AxonCommand for RedeemGiftCard {
-    fn creation_policy() -> AggregateCreationPolicy {
-        AggregateCreationPolicy::Never
-    }
-}
-
-impl AxonCommand for CancelGiftCard {
-    fn creation_policy() -> AggregateCreationPolicy {
-        AggregateCreationPolicy::Never
-    }
-}
-
 #[derive(Debug)]
 pub enum GiftCardCommand {
     Issue(IssueGiftCard),
@@ -78,13 +50,6 @@ impl GiftCardCommand {
             GiftCardCommand::Issue(i) => i.id.clone(),
             GiftCardCommand::Redeem(r) => r.id.clone(),
             GiftCardCommand::Cancel(c) => c.id.clone(),
-        }
-    }
-    pub fn get_creation_policy(&self) -> AggregateCreationPolicy {
-        match self {
-            GiftCardCommand::Issue(_) => IssueGiftCard::creation_policy(),
-            GiftCardCommand::Redeem(_) => RedeemGiftCard::creation_policy(),
-            GiftCardCommand::Cancel(_) => CancelGiftCard::creation_policy(),
         }
     }
 }
