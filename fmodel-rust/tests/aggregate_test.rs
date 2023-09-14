@@ -43,72 +43,15 @@ impl EventRepository<OrderCommand, OrderEvent> for InMemoryOrderEventRepository 
     type Version = i32;
 
     async fn fetch_events(&self, command: &OrderCommand) -> Result<Vec<(OrderEvent, i32)>, AggregateError> {
-        match command {
-            OrderCommand::Create(create_order) => {
-                let order_id = create_order.order_id;
-                Ok(
-                    self.events
-                        .lock()
-                        .unwrap()
-                        .clone()
-                        .into_iter()
-                        .filter(|(event, _)| {
-                            if let OrderEvent::Updated(order_updated) = event {
-                                order_updated.order_id.eq(&order_id)
-                            } else if let OrderEvent::Created(order_created) = event {
-                                order_created.order_id.eq(&order_id)
-                            } else if let OrderEvent::Cancelled(order_cancelled) = event {
-                                order_cancelled.order_id.eq(&order_id)
-                            } else {
-                                false
-                            }
-                        })
-                        .collect()
-                )
-            }
-            OrderCommand::Update(update_order) => {
-                let order_id = update_order.order_id;
-                Ok(
-                    self.events
-                        .lock()
-                        .unwrap()
-                        .clone()
-                        .into_iter()
-                        .filter(|(event, _)| {
-                            if let OrderEvent::Updated(order_updated) = event {
-                                order_updated.order_id.eq(&order_id)
-                            } else if let OrderEvent::Created(order_created) = event {
-                                order_created.order_id.eq(&order_id)
-                            } else if let OrderEvent::Cancelled(order_cancelled) = event {
-                                order_cancelled.order_id.eq(&order_id)
-                            } else {
-                                false
-                            }
-                        })
-                        .collect())
-            }
-            OrderCommand::Cancel(cancel_order) => {
-                let order_id = cancel_order.order_id;
-                Ok(
-                    self.events
-                        .lock()
-                        .unwrap()
-                        .clone()
-                        .into_iter()
-                        .filter(|(event, _)| {
-                            if let OrderEvent::Updated(order_updated) = event {
-                                order_updated.order_id.eq(&order_id)
-                            } else if let OrderEvent::Created(order_created) = event {
-                                order_created.order_id.eq(&order_id)
-                            } else if let OrderEvent::Cancelled(order_cancelled) = event {
-                                order_cancelled.order_id.eq(&order_id)
-                            } else {
-                                false
-                            }
-                        })
-                        .collect())
-            }
-        }
+        Ok(
+            self.events
+                .lock()
+                .unwrap()
+                .clone()
+                .into_iter()
+                .filter(|(event, _)| { event.id() == command.id() })
+                .collect()
+        )
     }
 
     async fn save(&self, events: &[OrderEvent], latest_version: &Option<i32>) -> Result<Vec<(OrderEvent, i32)>, AggregateError> {
