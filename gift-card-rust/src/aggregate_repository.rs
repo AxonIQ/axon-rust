@@ -2,6 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use derive_more::Display;
+use serde_derive::{Deserialize, Serialize};
 use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::configuration;
 use synapse_client::apis::events_api::publish_event_message;
@@ -12,7 +13,7 @@ use fmodel_rust::aggregate::EventRepository;
 use crate::api::{GiftCardCommand, GiftCardEvent};
 
 /// Error type for the application/aggregate
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum AggregateError {
     FetchEvents(String),

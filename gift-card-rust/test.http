@@ -1,0 +1,13 @@
+POST http://localhost:8000/commands
+Content-Type: application/json
+
+{
+  "name": "IssueGiftCard",
+  "routingKey": "1",
+  "payload": {
+    "amount": 3000,
+    "id": "1",
+    "type": "Issue"
+  },
+  "payloadType": "IssueGiftCard"
+}

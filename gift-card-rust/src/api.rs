@@ -1,10 +1,11 @@
 use serde_derive::{Deserialize, Serialize};
+use strum_macros::EnumIter;
 
 // ########################################
 // ############### Commands ###############
 // ########################################
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, EnumIter)]
 #[serde(tag = "type")]
 pub enum GiftCardCommand {
     Issue(IssueGiftCard),
@@ -12,19 +13,19 @@ pub enum GiftCardCommand {
     Cancel(CancelGiftCard),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct IssueGiftCard {
     pub id: String,
     pub amount: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RedeemGiftCard {
     pub id: String,
     pub amount: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CancelGiftCard {
     pub id: String,
 }
@@ -74,6 +75,16 @@ impl GiftCardEvent {
             GiftCardEvent::Issue(c) => c.id.to_owned().to_string(),
             GiftCardEvent::Redeem(c) => c.id.to_owned().to_string(),
             GiftCardEvent::Cancel(c) => c.id.to_owned().to_string(),
+        }
+    }
+}
+
+impl GiftCardCommand {
+    pub fn payload_type(&self) -> String {
+        match self {
+            GiftCardCommand::Issue(_c) => "IssueGiftCard".to_string(),
+            GiftCardCommand::Redeem(_c) => "RedeemGiftCard".to_string(),
+            GiftCardCommand::Cancel(_c) => "CancelGiftCard".to_string(),
         }
     }
 }

@@ -17,8 +17,8 @@ impl<'a, S, E> View<'a, S, E> {
     /// Creates a new instance of [View]`<S2, E>` by mapping the `evolve` function to a new function that takes a `&S2` and a `&E` and returns a `S`, and mapping the `initial_state` function to a new function that returns a `S2`.
     pub fn map_state<S2, F1, F2>(self, f1: &'a F1, f2: &'a F2) -> View<'a, S2, E>
         where
-            F1: Fn(&S2) -> S,
-            F2: Fn(&S) -> S2,
+            F1: Fn(&S2) -> S  + Send + Sync,
+            F2: Fn(&S) -> S2 + Send + Sync,
     {
         let new_evolve = Box::new(move |s2: &S2, e: &E| {
             let s = f1(s2);
@@ -38,7 +38,7 @@ impl<'a, S, E> View<'a, S, E> {
     /// Creates a new instance of [View]`<S, E2>` by mapping the `evolve` function to a new function that takes a `&S` and a `&E2` and returns a `S`, and mapping the `initial_state` function to a new function that returns a `S`.
     pub fn map_event<E2, F>(self, f: &'a F) -> View<'a, S, E2>
         where
-            F: Fn(&E2) -> E,
+            F: Fn(&E2) -> E + Send + Sync,
     {
         let new_evolve = Box::new(move |s: &S, e2: &E2| {
             let e = f(e2);
