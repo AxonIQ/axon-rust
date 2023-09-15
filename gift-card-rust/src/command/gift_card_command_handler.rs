@@ -4,8 +4,8 @@ use crate::gift_card_api::{GiftCardCanceled, GiftCardCommand, GiftCardEvent, Gif
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GiftCardState {
-    pub id: String,
-    pub amount: u32,
+    id: String,
+    amount: u32,
     is_cancelled: bool,
 }
 

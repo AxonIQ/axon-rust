@@ -27,18 +27,20 @@ In this demo we have categorized the code into three layers:
 - `Domain` - **pure** declaration of the program logic, the core, the inner layer, the part that is not aware of the
   outside world, the part that is testable in isolation, the part that is reusable.
   - [gift_card_api.rs](src/gift_card_api.rs) (`command side + query side`)
-  - [gift_card_command_handler.rs](src/gift_card_command_handler.rs) (`command side`)
-  - [gift_card_event_handler.rs - TODO] (`query side`)
+  - [gift_card_command_handler.rs](src/command/gift_card_command_handler.rs) (`command side`)
+  - [gift_card_event_handler.rs](src/query/gift_card_event_handler.rs) (`query side`)
 - `Application` - orchestrates the execution of the logics, by loading the state from the `Infrastructure / Fetch`,
   calling the `Domain` logic, and persisting the state back to the `Infrastructure / Save`.
   - [main.rs](src/main.rs)
 - `Adapters/Infrastructure` - infrastructure code, the shell, the outer layer, the part that is aware of the outside
   world.
-  - [gift_card_aggregate_controller.rs](src/gift_card_aggregate_controller.rs) (`command side`) - HTTP command
+  - [gift_card_aggregate_controller.rs](src/command/gift_card_aggregate_controller.rs) (`command side`) - HTTP command
     subscriber/callback
-  - [gift_card_command_gateway.rs](src/gift_card_command_gateway.rs) (`command side`) - HTTP command publisher
-  - [gift_card_event_repository.rs](src/gift_card_event_repository.rs) (`command side`) - Axon Server event repository
+  - [gift_card_command_gateway.rs](src/command/gift_card_command_gateway.rs) (`command side`) - HTTP command publisher
+  - [gift_card_event_repository.rs](src/command/gift_card_event_repository.rs) (`command side`) - Axon Server event
+    repository
   - [gift_card_event_handler_materialized_view_controller.rs - TODO] (`query side`) - HTTP event subscriber/callback
+  - [gift_card_query_gateway.rs - TODO] (`query side`) - HTTP query publisher
   - [gift_card_view_state_repository.rs - TODO] (`query side`) - Postgres DB view state repository
   - [gift_card_controller.rs](src/gift_card_controller.rs) (`command side + query side`) - HTTP/REST API, facing users
 

@@ -1,18 +1,18 @@
 use rocket::{launch, routes};
 use synapse_client::apis::configuration;
 
+use command::gift_card_event_repository::AxonServerEventRepository;
 use fmodel_rust::aggregate::EventSourcedAggregate;
 
-use crate::gift_card_aggregate_controller::{commands, register_gift_card_command_handler};
+use crate::command::gift_card_aggregate_controller::commands;
+use crate::command::gift_card_aggregate_controller::register_gift_card_command_handler;
+use crate::command::gift_card_command_handler::decider;
 use crate::gift_card_controller::gift_card_commands;
-use crate::gift_card_event_repository::AxonServerEventRepository;
 
 mod gift_card_api;
-mod gift_card_command_handler;
-mod gift_card_event_repository;
-mod gift_card_aggregate_controller;
-mod gift_card_command_gateway;
 mod gift_card_controller;
+mod command;
+mod query;
 
 #[launch]
 async fn rocket() -> _ {
@@ -28,7 +28,7 @@ async fn rocket() -> _ {
     // Create the aggregate
     let aggregate = EventSourcedAggregate::new(
         repository,
-        gift_card_command_handler::decider(),
+        decider(),
     );
     // Create the rocket instance and mount the routes
     let rocket = rocket::build()

@@ -25,7 +25,7 @@ pub enum AggregateError {
 impl Error for AggregateError {}
 
 /// Map to domain events of type GiftCardEvent
-pub trait ToGiftCardEvent {
+trait ToGiftCardEvent {
     fn to_gift_card_event(&self) -> Option<GiftCardEvent>;
 }
 
@@ -42,7 +42,7 @@ impl ToGiftCardEvent for EventMessage {
 }
 
 /// Map to Axon EventMessage
-pub trait ToEventMessage {
+trait ToEventMessage {
     fn to_event_message(&self, version: i64) -> PublishableEventMessage;
 }
 
