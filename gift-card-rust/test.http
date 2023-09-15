@@ -11,3 +11,14 @@ Content-Type: application/json
   },
   "payloadType": "IssueGiftCard"
 }
+
+###
+
+POST http://localhost:8000/gift_card_commands
+Content-Type: application/json
+
+{
+  "amount": 2000,
+  "id": "1234",
+  "type": "Issue"
+}
