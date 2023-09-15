@@ -1,35 +1,7 @@
-use crate::messages::AxonMessage;
-use serde::{Deserialize, Serialize};
+use crate::gift_card::events::{GiftCardCanceled, GiftCardIssued, GiftCardRedeemed};
+use crate::messages::{message_to_payload, value_to_message, AxonMessage};
 use serde_json::Value;
-use std::path::PathBuf;
 use synapse_client::models::{EventMessage, PublishableEventMessage};
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GiftCardIssued {
-    pub id: String,
-    pub amount: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GiftCardRedeemed {
-    pub id: String,
-    pub amount: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GiftCardCanceled {
-    pub id: String,
-}
-
-pub trait AxonDomainEvent<'a> {
-    fn body(&self) -> Option<PathBuf>;
-    fn event_name(&'a self) -> &'a str;
-    fn axon_iq_payload_revision(&'a self) -> Option<&'a str>;
-    fn axon_iq_aggregate_id(&'a self) -> Option<&'a str>;
-    fn axon_iq_aggregate_type(&'a self) -> Option<&'a str>;
-    fn axon_iq_sequence_number(&self) -> Option<i64>;
-    fn axon_iq_data_time(&self) -> Option<String>;
-}
 
 impl AxonMessage for GiftCardIssued {
     fn name() -> &'static str {
@@ -64,11 +36,11 @@ impl GiftCardEvent {
             GiftCardEvent::Cancel(_) => GiftCardCanceled::name(),
         }
     }
-    pub fn get_payload(&self) -> Value {
+    pub fn get_payload(&self) -> Option<Option<Value>> {
         match self {
-            GiftCardEvent::Issue(i) => serde_json::to_value(i).unwrap(),
-            GiftCardEvent::Redeem(r) => serde_json::to_value(r).unwrap(),
-            GiftCardEvent::Cancel(c) => serde_json::to_value(c).unwrap(),
+            GiftCardEvent::Issue(i) => message_to_payload(i),
+            GiftCardEvent::Redeem(r) => message_to_payload(r),
+            GiftCardEvent::Cancel(c) => message_to_payload(c),
         }
     }
 }
@@ -78,7 +50,7 @@ pub fn to_publishable_event_message(
     aggregate_id: Option<String>,
     aggregate_type: Option<String>,
     sequence_number: Option<i64>,
-    event: Value,
+    payload: Option<Option<Value>>,
 ) -> PublishableEventMessage {
     PublishableEventMessage {
         payload_type: None,
@@ -90,7 +62,7 @@ pub fn to_publishable_event_message(
         index: None,
         id: None,
         meta_data: None,
-        payload: Some(Some(event)),
+        payload,
         payload_revision: None,
     }
 }
@@ -104,15 +76,15 @@ impl ContainsGiftCardEvent for EventMessage {
         let value = self.payload.clone().unwrap().unwrap();
         match self.name.as_str() {
             "GiftCardIssued" => {
-                let gift_card_issued: GiftCardIssued = serde_json::from_value(value).unwrap();
+                let gift_card_issued: GiftCardIssued = value_to_message(value);
                 Some(GiftCardEvent::Issue(gift_card_issued))
             }
             "GiftCardRedeemed" => {
-                let gift_card_redeemed: GiftCardRedeemed = serde_json::from_value(value).unwrap();
+                let gift_card_redeemed: GiftCardRedeemed = value_to_message(value);
                 Some(GiftCardEvent::Redeem(gift_card_redeemed))
             }
             "GiftCardCanceled" => {
-                let gift_card_cancelled: GiftCardCanceled = serde_json::from_value(value).unwrap();
+                let gift_card_cancelled: GiftCardCanceled = value_to_message(value);
                 Some(GiftCardEvent::Cancel(gift_card_cancelled))
             }
             _ => None,

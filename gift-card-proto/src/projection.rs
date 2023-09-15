@@ -1,11 +1,10 @@
-use crate::messages::events::{
-    ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent, GiftCardIssued, GiftCardRedeemed,
+use crate::gift_card::events::{GiftCardCanceled, GiftCardIssued, GiftCardRedeemed};
+use crate::gift_card::queries::{
+    FetchGiftCardSummaries, FetchGiftCardSummary, GiftCardSummary, MultipleGiftCards, OneGiftCard,
 };
-use crate::messages::queries::{
-    ContainsGiftCardQuery, FetchGiftCardSummaries, FetchGiftCardSummary, GiftCardQuery,
-    GiftCardSummary,
-};
-use crate::messages::AxonMessage;
+use crate::messages::events::{ContainsGiftCardEvent, GiftCardEvent};
+use crate::messages::queries::{ContainsGiftCardQuery, GiftCardQuery};
+use crate::messages::{message_to_payload, AxonMessage};
 use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};
 use dashmap::DashMap;
@@ -75,12 +74,15 @@ impl GiftCardProjection {
             .alter(&event.id.clone(), |_, v| v.cancel(event, date_time))
     }
     fn query_one(&self, query: FetchGiftCardSummary) -> serde_json::Value {
-        let r = match self.gift_cards.get(&*query.id) {
+        match self.gift_cards.get(&*query.id) {
             None => serde_json::Value::Object(serde_json::Map::new()),
-            Some(s) => serde_json::to_value(s.value()).unwrap(),
-        };
-        log::info!("sending back: {:?}", r);
-        r
+            Some(s) => {
+                let message = OneGiftCard {
+                    card: Some(s.value().clone()),
+                };
+                message_to_payload(&message).unwrap().unwrap()
+            }
+        }
     }
     fn query_multiple(&self, query: FetchGiftCardSummaries) -> serde_json::Value {
         let mut result_list = vec![];
@@ -90,29 +92,19 @@ impl GiftCardProjection {
             match self.keys.get(index) {
                 Some(key) => {
                     let item = self.gift_cards.get(key).unwrap();
-                    result_list.push(serde_json::to_value(item.value()).unwrap());
+                    result_list.push(item.value().clone());
                     index += 1;
                 }
                 None => break,
             }
         }
-        let items = serde_json::Value::Array(result_list);
-        log::debug!("items in list: {}", items);
-        let mut map = serde_json::Map::new();
-        map.insert(String::from("items"), items);
-        map.insert(
-            String::from("total"),
-            serde_json::Value::Number(serde_json::Number::from(self.keys.len())),
-        );
-        map.insert(
-            String::from("offset"),
-            serde_json::Value::Number(serde_json::Number::from(query.offset)),
-        );
-        map.insert(
-            String::from("limit"),
-            serde_json::Value::Number(serde_json::Number::from(query.limit)),
-        );
-        serde_json::Value::Object(map)
+        let result = MultipleGiftCards {
+            cards: result_list,
+            total: self.keys.len() as u32,
+            offset: query.offset,
+            limit: query.limit,
+        };
+        message_to_payload(&result).unwrap().unwrap()
     }
 }
 

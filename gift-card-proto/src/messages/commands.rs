@@ -1,24 +1,7 @@
-use crate::messages::AxonMessage;
-use serde::{Deserialize, Serialize};
+use crate::gift_card::commands::{CancelGiftCard, IssueGiftCard, RedeemGiftCard};
+use crate::messages::{message_to_payload, value_to_message, AxonMessage};
+use prost::Message;
 use synapse_client::models::CommandMessage;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct IssueGiftCard {
-    pub id: String,
-    pub amount: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RedeemGiftCard {
-    pub id: String,
-    pub amount: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CancelGiftCard {
-    pub id: String,
-}
-
 impl AxonMessage for IssueGiftCard {
     fn name() -> &'static str {
         "IssueGiftCard"
@@ -63,15 +46,15 @@ impl ContainsGiftCardCommand for CommandMessage {
         let value = self.payload.clone().unwrap().unwrap();
         match self.name.as_str() {
             "IssueGiftCard" => {
-                let issue_gift_card: IssueGiftCard = serde_json::from_value(value).unwrap();
+                let issue_gift_card: IssueGiftCard = value_to_message(value);
                 Some(GiftCardCommand::Issue(issue_gift_card))
             }
             "RedeemGiftCard" => {
-                let redeem_gift_card: RedeemGiftCard = serde_json::from_value(value).unwrap();
+                let redeem_gift_card: RedeemGiftCard = value_to_message(value);
                 Some(GiftCardCommand::Redeem(redeem_gift_card))
             }
             "CancelGiftCard" => {
-                let cancel_gift_card: CancelGiftCard = serde_json::from_value(value).unwrap();
+                let cancel_gift_card: CancelGiftCard = value_to_message(value);
                 Some(GiftCardCommand::Cancel(cancel_gift_card))
             }
             _ => None,
@@ -81,15 +64,16 @@ impl ContainsGiftCardCommand for CommandMessage {
 
 pub fn to_command_message<T>(name: &str, routing_key: Option<String>, command: &T) -> CommandMessage
 where
-    T: Serialize,
+    T: Message,
 {
+    let payload = message_to_payload(command);
     CommandMessage {
         name: String::from(name),
         routing_key,
         priority: None,
         id: None,
         meta_data: None,
-        payload: Some(Some(serde_json::to_value(command).unwrap())),
+        payload,
         payload_type: None,
         payload_revision: None,
     }

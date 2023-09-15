@@ -16,10 +16,21 @@ mod messages;
 mod projection;
 mod rest_api;
 mod warp_util;
+pub mod gift_card {
+    pub mod commands {
+        include!(concat!(env!("OUT_DIR"), "/gift_card.commands.rs"));
+    }
+    pub mod events {
+        include!(concat!(env!("OUT_DIR"), "/gift_card.events.rs"));
+    }
+    pub mod queries {
+        include!(concat!(env!("OUT_DIR"), "/gift_card.queries.rs"));
+    }
+}
 
 static CONFIGURATION: Lazy<Configuration> = Lazy::new(Configuration::new);
 static CONTEXT: &str = "default";
-static CLIENT_ID: &str = "gift-card-raw";
+static CLIENT_ID: &str = "gift-card-proto";
 
 #[tokio::main]
 async fn main() {

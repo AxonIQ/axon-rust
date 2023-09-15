@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package gift_card.queries;
+
+message FetchGiftCardSummary {
+  string id = 1;
+}
+
+message FetchGiftCardSummaries {
+  uint32 limit = 1;
+  uint32 offset = 2;
+}
+
+message GiftCardSummary {
+  string id = 1;
+  uint32 initial_amount = 2;
+  uint32 remaining_amount = 3;
+  bool canceled = 4;
+  string issued = 5;
+  string last_updated = 6;
+}
+
+message OneGiftCard {
+  GiftCardSummary card = 1;
+}
+
+message MultipleGiftCards {
+  repeated GiftCardSummary cards = 1;
+  uint32 total = 2;
+  uint32 limit = 3;
+  uint32 offset = 4;
+}

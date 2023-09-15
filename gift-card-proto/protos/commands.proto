@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package gift_card.commands;
+
+message IssueGiftCard {
+  string id = 1;
+  uint32 amount = 2;
+}
+
+message RedeemGiftCard {
+  string id = 1;
+  uint32 amount = 2;
+}
+
+message CancelGiftCard {
+  string id = 1;
+}
