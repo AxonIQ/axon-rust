@@ -2,10 +2,10 @@ use synapse_client::apis::{configuration, Error};
 use synapse_client::apis::commands_api::{send_command_message, SendCommandMessageError};
 use synapse_client::models::{CommandMessage, CommandResponseMessage};
 
-use crate::api::GiftCardCommand;
+use crate::gift_card_api::GiftCardCommand;
 
 /// Send/Dispatch a command to Axon Server
-pub async fn send_gift_card_command(command: GiftCardCommand, configuration: &configuration::Configuration, context: &String) -> Result<CommandResponseMessage, Error<SendCommandMessageError>> {
+pub async fn send_gift_card_command(command: GiftCardCommand, configuration: &configuration::Configuration, context: &str) -> Result<CommandResponseMessage, Error<SendCommandMessageError>> {
     send_command_message(configuration, context, Some(command.to_command_message())).await
 }
 

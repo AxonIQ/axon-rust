@@ -1,6 +1,6 @@
 use fmodel_rust::decider::Decider;
 
-use crate::api::{GiftCardCanceled, GiftCardCommand, GiftCardEvent, GiftCardIssued, GiftCardRedeemed};
+use crate::gift_card_api::{GiftCardCanceled, GiftCardCommand, GiftCardEvent, GiftCardIssued, GiftCardRedeemed};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GiftCardState {
@@ -14,7 +14,7 @@ pub fn decider<'a>() -> Decider<'a, GiftCardCommand, GiftCardState, GiftCardEven
         decide: Box::new(|command, state| {
             match command {
                 GiftCardCommand::Issue(cmd) => {
-                    if state.id == "0".to_string() {
+                    if state.id == *"0" {
                         vec![GiftCardEvent::Issue(GiftCardIssued {
                             id: cmd.id.to_owned(),
                             amount: cmd.amount,

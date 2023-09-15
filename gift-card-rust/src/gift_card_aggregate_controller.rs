@@ -8,9 +8,9 @@ use synapse_client::models::{CommandHandlerRegistration, CommandMessage, Command
 
 use fmodel_rust::aggregate::EventSourcedAggregate;
 
-use crate::aggregate_repository::{AggregateError, AxonServerEventRepository};
-use crate::api::{GiftCardCommand, GiftCardEvent};
-use crate::decider::GiftCardState;
+use crate::gift_card_api::{GiftCardCommand, GiftCardEvent};
+use crate::gift_card_command_handler::GiftCardState;
+use crate::gift_card_event_repository::{AggregateError, AxonServerEventRepository};
 
 #[post("/commands", format = "application/json", data = "<command_message>")]
 pub async fn commands(command_message: Json<CommandMessage>, app_state: &State<EventSourcedAggregate<'_, GiftCardCommand, GiftCardState, GiftCardEvent, AxonServerEventRepository, i64, AggregateError>>) -> Result<Json<CommandResponseMessage>, Status> {
@@ -75,7 +75,7 @@ impl ToGiftCardCommand for CommandMessage {
         let command = serde_json::from_value(value);
         match command {
             Ok(command) => { Some(command) }
-            Err(_err) => { return None; }
+            Err(_err) => { None }
         }
     }
 }

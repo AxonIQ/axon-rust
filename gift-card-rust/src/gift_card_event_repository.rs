@@ -10,7 +10,7 @@ use synapse_client::models::{EventMessage, PublishableEventMessage};
 
 use fmodel_rust::aggregate::EventRepository;
 
-use crate::api::{GiftCardCommand, GiftCardEvent};
+use crate::gift_card_api::{GiftCardCommand, GiftCardEvent};
 
 /// Error type for the application/aggregate
 #[derive(Debug, Display, Serialize, Deserialize)]
@@ -36,7 +36,7 @@ impl ToGiftCardEvent for EventMessage {
         let event = serde_json::from_value(value);
         match event {
             Ok(event) => { Some(event) }
-            Err(_err) => { return None; }
+            Err(_err) => { None }
         }
     }
 }
