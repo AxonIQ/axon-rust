@@ -40,12 +40,12 @@ pub async fn commands(command_message: Json<CommandMessage>, app_state: &State<E
     }
 }
 
-pub async fn register_gift_card_command_handler(configuration: &configuration::Configuration, context: &String, client_id: &String, component_name: &String) {
+pub async fn register_gift_card_command_handler(configuration: &configuration::Configuration, context: &String, client_id: &String, component_name: &String, application_host: &String) {
     let registration = CommandHandlerRegistration {
         names: GiftCardCommand::iter()
             .map(|v| v.payload_type())
             .collect(),
-        endpoint: String::from("http://host.docker.internal:8000/commands"),
+        endpoint: application_host.to_owned() + &*"/commands".to_string(),
         endpoint_type: Some(String::from("http-message")),
         endpoint_options: None,
         client_id: Some(client_id.to_owned()),

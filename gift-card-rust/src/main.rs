@@ -38,7 +38,7 @@ async fn rocket() -> _ {
         .mount("/", routes![commands, gift_card_commands]);
 
     // Call your service(s) or perform post-launch tasks here: register command handlers, register event handlers, etc.
-    register_gift_card_command_handler(&configuration, &context, &"gift_card_client".to_string(), &"gift_card_component".to_string()).await;
+    register_gift_card_command_handler(&configuration, &context, &"gift_card_client".to_string(), &"gift_card_component".to_string(), &"http://host.docker.internal:8000".to_string()).await;
 
     // Return the rocket instance
     rocket
