@@ -1,7 +1,7 @@
 use fmodel_rust::aggregate::EventSourcedAggregate;
-use rocket::{post, State};
 use rocket::http::Status;
 use rocket::serde::json::Json;
+use rocket::{post, State};
 use strum::IntoEnumIterator;
 use synapse_client::apis::command_handlers_api::replace_command_handler;
 use synapse_client::apis::configuration;
@@ -74,8 +74,8 @@ pub async fn register_gift_card_command_handler(
         "10fca0c4-3376-4ca2-a7c2-db2b75c250e0",
         Some(registration),
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 }
 
 /// Map to domain commands of type GiftCardCommand

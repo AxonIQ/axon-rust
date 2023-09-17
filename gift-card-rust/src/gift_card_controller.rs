@@ -1,6 +1,6 @@
-use rocket::{post, State};
 use rocket::http::Status;
 use rocket::serde::json::Json;
+use rocket::{post, State};
 use synapse_client::apis::configuration;
 use synapse_client::models::CommandResponseMessage;
 

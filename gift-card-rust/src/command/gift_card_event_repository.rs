@@ -112,7 +112,7 @@ impl EventRepository<GiftCardCommand, GiftCardEvent> for AxonServerEventReposito
                 &self.context,
                 Some(evt.to_event_message(version)),
             )
-                .await;
+            .await;
             match result {
                 Ok(_) => saved_events.push((evt.to_owned(), version)),
                 Err(err) => return Err(AggregateError::SaveEvents(err.to_string())),

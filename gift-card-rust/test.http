@@ -3,10 +3,10 @@ Content-Type: application/json
 
 {
   "name": "IssueGiftCard",
-  "routingKey": "1",
+  "routingKey": "12",
   "payload": {
     "amount": 3000,
-    "id": "1",
+    "id": "12",
     "type": "Issue"
   },
   "payloadType": "IssueGiftCard"
@@ -19,6 +19,6 @@ Content-Type: application/json
 
 {
   "amount": 2000,
-  "id": "1234",
+  "id": "11",
   "type": "Issue"
 }

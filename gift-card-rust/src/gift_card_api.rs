@@ -44,7 +44,7 @@ impl GiftCardCommand {
 // ################ Events ################
 // ########################################
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, EnumIter)]
 #[serde(tag = "type")]
 pub enum GiftCardEvent {
     Issue(GiftCardIssued),
@@ -52,19 +52,19 @@ pub enum GiftCardEvent {
     Cancel(GiftCardCanceled),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct GiftCardIssued {
     pub id: String,
     pub amount: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct GiftCardRedeemed {
     pub id: String,
     pub amount: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct GiftCardCanceled {
     pub id: String,
 }

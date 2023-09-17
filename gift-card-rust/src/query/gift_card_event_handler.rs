@@ -1,12 +1,13 @@
 use fmodel_rust::view::View;
+use serde_derive::{Deserialize, Serialize};
 
 use crate::gift_card_api::GiftCardEvent;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiftCardViewState {
-    id: String,
-    amount: u32,
-    is_cancelled: bool,
+    pub id: String,
+    pub amount: u32,
+    pub is_cancelled: bool,
 }
 
 #[allow(dead_code)]

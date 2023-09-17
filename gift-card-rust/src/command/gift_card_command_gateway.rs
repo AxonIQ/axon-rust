@@ -1,5 +1,5 @@
-use synapse_client::apis::{configuration, Error};
 use synapse_client::apis::commands_api::{send_command_message, SendCommandMessageError};
+use synapse_client::apis::{configuration, Error};
 use synapse_client::models::{CommandMessage, CommandResponseMessage};
 
 use crate::gift_card_api::GiftCardCommand;
