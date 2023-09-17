@@ -1,6 +1,8 @@
 use fmodel_rust::decider::Decider;
 
-use crate::gift_card_api::{GiftCardCanceled, GiftCardCommand, GiftCardEvent, GiftCardIssued, GiftCardRedeemed};
+use crate::gift_card_api::{
+    GiftCardCanceled, GiftCardCommand, GiftCardEvent, GiftCardIssued, GiftCardRedeemed,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GiftCardState {
@@ -11,34 +13,34 @@ pub struct GiftCardState {
 
 pub fn decider<'a>() -> Decider<'a, GiftCardCommand, GiftCardState, GiftCardEvent> {
     Decider {
-        decide: Box::new(|command, state| {
-            match command {
-                GiftCardCommand::Issue(cmd) => {
-                    if state.id == *"0" {
-                        vec![GiftCardEvent::Issue(GiftCardIssued {
-                            id: cmd.id.to_owned(),
-                            amount: cmd.amount,
-                        })]
-                    } else { vec![] }
+        decide: Box::new(|command, state| match command {
+            GiftCardCommand::Issue(cmd) => {
+                if state.id == *"0" {
+                    vec![GiftCardEvent::Issue(GiftCardIssued {
+                        id: cmd.id.to_owned(),
+                        amount: cmd.amount,
+                    })]
+                } else {
+                    vec![]
                 }
-                GiftCardCommand::Redeem(cmd) => {
-                    if state.id == cmd.id {
-                        vec![GiftCardEvent::Redeem(GiftCardRedeemed {
-                            id: cmd.id.to_owned(),
-                            amount: cmd.amount,
-                        })]
-                    } else {
-                        vec![]
-                    }
+            }
+            GiftCardCommand::Redeem(cmd) => {
+                if state.id == cmd.id {
+                    vec![GiftCardEvent::Redeem(GiftCardRedeemed {
+                        id: cmd.id.to_owned(),
+                        amount: cmd.amount,
+                    })]
+                } else {
+                    vec![]
                 }
-                GiftCardCommand::Cancel(cmd) => {
-                    if state.id == cmd.id {
-                        vec![GiftCardEvent::Cancel(GiftCardCanceled {
-                            id: cmd.id.to_owned(),
-                        })]
-                    } else {
-                        vec![]
-                    }
+            }
+            GiftCardCommand::Cancel(cmd) => {
+                if state.id == cmd.id {
+                    vec![GiftCardEvent::Cancel(GiftCardCanceled {
+                        id: cmd.id.to_owned(),
+                    })]
+                } else {
+                    vec![]
                 }
             }
         }),

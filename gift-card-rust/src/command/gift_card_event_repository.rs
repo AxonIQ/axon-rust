@@ -2,13 +2,12 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use derive_more::Display;
+use fmodel_rust::aggregate::EventRepository;
 use serde_derive::{Deserialize, Serialize};
 use synapse_client::apis::aggregate_api::read_aggregate_events;
 use synapse_client::apis::configuration;
 use synapse_client::apis::events_api::publish_event_message;
 use synapse_client::models::{EventMessage, PublishableEventMessage};
-
-use fmodel_rust::aggregate::EventRepository;
 
 use crate::gift_card_api::{GiftCardCommand, GiftCardEvent};
 
@@ -35,8 +34,8 @@ impl ToGiftCardEvent for EventMessage {
         let value = self.payload.clone().unwrap().unwrap();
         let event = serde_json::from_value(value);
         match event {
-            Ok(event) => { Some(event) }
-            Err(_err) => { None }
+            Ok(event) => Some(event),
+            Err(_err) => None,
         }
     }
 }
@@ -78,29 +77,44 @@ impl EventRepository<GiftCardCommand, GiftCardEvent> for AxonServerEventReposito
     type Error = AggregateError;
     type Version = i64;
 
-    async fn fetch_events(&self, command: &GiftCardCommand) -> Result<Vec<(GiftCardEvent, i64)>, AggregateError> {
+    async fn fetch_events(
+        &self,
+        command: &GiftCardCommand,
+    ) -> Result<Vec<(GiftCardEvent, i64)>, AggregateError> {
         let result = read_aggregate_events(&self.configuration, &self.context, &command.id()).await;
         match result {
-            Ok(events) => {
-                Ok(events
-                    .items
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|event| (event.to_gift_card_event().unwrap(), event.sequence_number.unwrap()))
-                    .collect())
-            }
+            Ok(events) => Ok(events
+                .items
+                .unwrap_or_default()
+                .into_iter()
+                .map(|event| {
+                    (
+                        event.to_gift_card_event().unwrap(),
+                        event.sequence_number.unwrap(),
+                    )
+                })
+                .collect()),
             Err(err) => Err(AggregateError::FetchEvents(err.to_string())),
         }
     }
 
-    async fn save(&self, events: &[GiftCardEvent], version: &Option<i64>) -> Result<Vec<(GiftCardEvent, i64)>, AggregateError> {
+    async fn save(
+        &self,
+        events: &[GiftCardEvent],
+        version: &Option<i64>,
+    ) -> Result<Vec<(GiftCardEvent, i64)>, AggregateError> {
         let mut saved_events: Vec<(GiftCardEvent, i64)> = vec![];
         let mut version = version.unwrap_or(-1);
         for evt in events {
             version += 1;
-            let result = publish_event_message(&self.configuration, &self.context, Some(evt.to_event_message(version))).await;
+            let result = publish_event_message(
+                &self.configuration,
+                &self.context,
+                Some(evt.to_event_message(version)),
+            )
+                .await;
             match result {
-                Ok(_) => { saved_events.push((evt.to_owned(), version)) }
+                Ok(_) => saved_events.push((evt.to_owned(), version)),
                 Err(err) => return Err(AggregateError::SaveEvents(err.to_string())),
             };
         }

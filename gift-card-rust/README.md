@@ -4,7 +4,7 @@ A demo application written in [Rust](https://www.rust-lang.org/),
 using [Axon Synapse](https://library.axoniq.io/synapse-quick-start/development/index.html)
 and [Axon Server](https://developer.axoniq.io/axon-server-enterprise/overview).
 
-Additionally, the application is using [fmodel-rust](../fmodel-rust) to
+Additionally, the application is using [fmodel-rust](https://docs.rs/fmodel-rust/latest/fmodel_rust/) to
 implement [CQRS](https://martinfowler.com/bliki/CQRS.html)
 and [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) patterns effectively.
 
@@ -69,6 +69,8 @@ docker-compose down -v
 ```bash
 cargo run
 ```
+
+**Check the HTTP test scratch file [http_test.sh](test.http) for the example HTTP calls.**
 
 ---
 
