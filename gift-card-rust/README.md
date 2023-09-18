@@ -39,9 +39,9 @@ In this demo we have categorized the code into three layers:
   - [gift_card_command_gateway.rs](src/command/gift_card_command_gateway.rs) (`command side`) - HTTP command publisher
   - [gift_card_event_repository.rs](src/command/gift_card_event_repository.rs) (`command side`) - Axon Server event
     repository
-  - [gift_card_event_handler_materialized_view_controller.rs - TODO] (`query side`) - HTTP event subscriber/callback
-  - [gift_card_query_gateway.rs - TODO] (`query side`) - HTTP query publisher
-  - [gift_card_view_state_repository.rs - TODO] (`query side`) - Postgres DB view state repository
+  - [gift_card_materialized_view_controller.rs](src/query/gift_card_materialized_view_controller.rs) (`query side`) - HTTP event and query subscriber/callback
+  - [gift_card_query_gateway.rs](src/query/gift_card_query_gateway.rs) (`query side`) - HTTP query publisher
+  - [gift_card_view_state_repository.rs](src/query/gift_card_view_state_repository.rs) (`query side`) - In-Memory DB view state repository
   - [gift_card_controller.rs](src/gift_card_controller.rs) (`command side + query side`) - HTTP/REST API, facing users
 
 Additionally, the components are split per command and query side of the application. This is CQRS pattern influencing
