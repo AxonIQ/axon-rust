@@ -104,3 +104,31 @@ impl GiftCardEvent {
         "GiftCard".to_string()
     }
 }
+
+// ########################################
+// ############### Queries ###############
+// ########################################
+
+#[derive(Serialize, Deserialize, Debug, EnumIter)]
+#[serde(tag = "type")]
+pub enum GiftCardQuery {
+    ById(FindGiftCardById),
+    All(FindAllGiftCards),
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct FindGiftCardById {
+    pub id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct FindAllGiftCards;
+
+impl GiftCardQuery {
+    pub fn payload_type(&self) -> String {
+        match self {
+            GiftCardQuery::ById(_q) => "FindGiftCardById".to_string(),
+            GiftCardQuery::All(_q) => "FindAllGiftCards".to_string(),
+        }
+    }
+}

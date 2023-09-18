@@ -1,13 +1,18 @@
-use fmodel_rust::materialized_view::MaterializedView;
+use fmodel_rust::materialized_view::{MaterializedView, ViewStateRepository};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{post, State};
 use strum::IntoEnumIterator;
 use synapse_client::apis::configuration;
 use synapse_client::apis::event_handlers_api::replace_event_handler;
-use synapse_client::models::{EventHandlerRegistration, EventMessage};
+use synapse_client::apis::query_handlers_api::replace_query_handler;
+use synapse_client::models::{
+    EventHandlerRegistration, EventMessage, QueryHandlerRegistration, QueryMessage,
+    QueryResponseMessage,
+};
 
-use crate::gift_card_api::GiftCardEvent;
+use crate::command::gift_card_event_repository::ToGiftCardEvent;
+use crate::gift_card_api::{GiftCardEvent, GiftCardIssued, GiftCardQuery};
 use crate::query::gift_card_event_handler::GiftCardViewState;
 use crate::query::gift_card_view_state_repository::{
     InMemoryViewStateRepository, MaterializedViewError,
@@ -33,6 +38,56 @@ pub async fn events(
         .await
         .map_err(|_err| Status::InternalServerError)
         .map(Json)
+}
+
+#[post("/queries", format = "application/json", data = "<query_message>")]
+pub async fn queries(
+    query_message: Json<QueryMessage>,
+    materialized_view: &State<
+        MaterializedView<
+            '_,
+            GiftCardViewState,
+            GiftCardEvent,
+            InMemoryViewStateRepository,
+            MaterializedViewError,
+        >,
+    >,
+) -> Result<Json<QueryResponseMessage>, Status> {
+    let query = query_message.into_inner();
+    let query = query.to_gift_card_query().unwrap();
+    match query {
+        GiftCardQuery::ById(q) => {
+            let state = materialized_view
+                .repository
+                .fetch_state(&GiftCardEvent::Issue(GiftCardIssued {
+                    id: q.id.to_owned(),
+                    amount: 0,
+                }))
+                .await
+                .unwrap();
+            match state {
+                Some(s) => Ok(Json(QueryResponseMessage {
+                    id: None,
+                    meta_data: None,
+                    payload: Some(Some(serde_json::to_value(s).unwrap())),
+                    payload_type: Option::from("GiftCardViewState".to_string()),
+                    payload_revision: None,
+                })),
+                None => Err(Status::NotFound),
+            }
+        }
+        GiftCardQuery::All(..) => {
+            let states = materialized_view.repository.states.lock().unwrap();
+            let states: Vec<GiftCardViewState> = states.values().cloned().collect();
+            Ok(Json(QueryResponseMessage {
+                id: None,
+                meta_data: None,
+                payload: Some(Some(serde_json::to_value(states).unwrap())),
+                payload_type: Option::from("GiftCardViewState".to_string()),
+                payload_revision: None,
+            }))
+        }
+    }
 }
 
 pub async fn register_gift_card_event_handler(
@@ -67,18 +122,48 @@ pub async fn register_gift_card_event_handler(
     .unwrap();
 }
 
-/// Map to domain events of type GiftCardEvent
-trait ToGiftCardEvent {
-    fn to_gift_card_event(&self) -> Option<GiftCardEvent>;
+pub async fn register_gift_card_query_handler(
+    configuration: &configuration::Configuration,
+    context: &String,
+    client_id: &String,
+    component_name: &String,
+    application_host: &String,
+) {
+    let registration = QueryHandlerRegistration {
+        names: GiftCardQuery::iter().map(|v| v.payload_type()).collect(),
+        endpoint: application_host.to_owned() + &*"/queries".to_string(),
+        endpoint_type: Some(String::from("http-message")),
+        endpoint_options: None,
+        client_id: Some(client_id.to_owned()),
+        component_name: Some(component_name.to_owned()),
+        enabled: Some(true),
+        context: Some(context.to_owned()),
+        client_authentication_id: None,
+        server_authentication_id: None,
+        last_error: None,
+    };
+    replace_query_handler(
+        configuration,
+        context,
+        "10fca0c4-3376-4ca2-a7c2-db2b75c250e2",
+        Some(registration),
+    )
+    .await
+    .unwrap();
 }
 
-/// Map from Axon EventMessage to domain events of type GiftCardEvent
-impl ToGiftCardEvent for EventMessage {
-    fn to_gift_card_event(&self) -> Option<GiftCardEvent> {
+/// Map to domain queries of type GiftCardQuery
+trait ToGiftCardQuery {
+    fn to_gift_card_query(&self) -> Option<GiftCardQuery>;
+}
+
+/// Map from Axon QueryMessage to domain events of type GiftCardQuery
+impl ToGiftCardQuery for QueryMessage {
+    fn to_gift_card_query(&self) -> Option<GiftCardQuery> {
         let value = self.payload.clone().unwrap().unwrap();
-        let event = serde_json::from_value(value);
-        match event {
-            Ok(event) => Some(event),
+        let query = serde_json::from_value(value);
+        match query {
+            Ok(query) => Some(query),
             Err(_err) => None,
         }
     }

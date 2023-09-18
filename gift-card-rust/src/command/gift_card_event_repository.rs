@@ -24,7 +24,7 @@ pub enum AggregateError {
 impl Error for AggregateError {}
 
 /// Map to domain events of type GiftCardEvent
-trait ToGiftCardEvent {
+pub trait ToGiftCardEvent {
     fn to_gift_card_event(&self) -> Option<GiftCardEvent>;
 }
 

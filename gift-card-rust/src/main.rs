@@ -8,9 +8,12 @@ use crate::command::gift_card_aggregate_controller::register_gift_card_command_h
 use crate::command::gift_card_command_handler::decider;
 use crate::command::gift_card_event_repository::AxonServerEventRepository;
 use crate::gift_card_controller::gift_card_commands;
+use crate::gift_card_controller::gift_card_queries;
 use crate::query::gift_card_event_handler::view;
-use crate::query::gift_card_materialized_view_controller::events;
 use crate::query::gift_card_materialized_view_controller::register_gift_card_event_handler;
+use crate::query::gift_card_materialized_view_controller::{
+    events, queries, register_gift_card_query_handler,
+};
 use crate::query::gift_card_view_state_repository::InMemoryViewStateRepository;
 
 mod command;
@@ -56,7 +59,16 @@ async fn rocket() -> _ {
         .manage(materialized_view)
         .manage(configuration.clone())
         .manage(context.clone())
-        .mount("/", routes![commands, gift_card_commands, events]);
+        .mount(
+            "/",
+            routes![
+                commands,
+                gift_card_commands,
+                events,
+                queries,
+                gift_card_queries
+            ],
+        );
 
     // Call your service(s) or perform post-launch tasks here: register command handlers, register event handlers, etc.
     register_gift_card_command_handler(
@@ -69,6 +81,15 @@ async fn rocket() -> _ {
     .await;
 
     register_gift_card_event_handler(
+        &configuration,
+        &context,
+        &"gift_card_client".to_string(),
+        &"gift_card_component".to_string(),
+        &"http://host.docker.internal:8000".to_string(),
+    )
+    .await;
+
+    register_gift_card_query_handler(
         &configuration,
         &context,
         &"gift_card_client".to_string(),

@@ -22,7 +22,7 @@ impl Error for MaterializedViewError {}
 
 /// Struct to hold the view state in memory - not for production use, consider using a database
 pub struct InMemoryViewStateRepository {
-    states: Mutex<HashMap<String, GiftCardViewState>>,
+    pub(crate) states: Mutex<HashMap<String, GiftCardViewState>>,
 }
 
 impl InMemoryViewStateRepository {
