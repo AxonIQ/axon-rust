@@ -20,7 +20,7 @@ pub enum MaterializedViewError {
 
 impl Error for MaterializedViewError {}
 
-/// Struct to hold the view state in memory - not for production use, consider using a database
+/// Struct to hold the view state in memory - not for production use, consider using a database !!!
 #[derive(Clone)]
 pub struct InMemoryViewStateRepository {
     pub(crate) states: Arc<Mutex<HashMap<String, GiftCardViewState>>>,

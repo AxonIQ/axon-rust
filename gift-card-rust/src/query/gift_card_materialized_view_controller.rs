@@ -19,7 +19,7 @@ use crate::query::gift_card_view_state_repository::{
     InMemoryViewStateRepository, MaterializedViewError,
 };
 
-// Pragmatic type alias for the MaterializedView
+/// Pragmatic type alias for the MaterializedView
 type GiftCardMaterializedView<'a> = MaterializedView<
     GiftCardViewState,
     GiftCardEvent,

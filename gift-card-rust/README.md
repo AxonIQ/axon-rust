@@ -70,7 +70,7 @@ docker-compose down -v
 cargo run
 ```
 
-**Check the HTTP test scratch file [http_test.sh](test.http) for the example HTTP calls.**
+**Check the HTTP test scratch file [test.http](test.http) for the example HTTP calls.**
 
 ---
 
