@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package gift_card.events;
+
+message GiftCardIssued {
+  string id = 1;
+  uint32 amount = 2;
+}
+
+message GiftCardRedeemed {
+  string id = 1;
+  uint32 amount = 2;
+}
+
+message GiftCardCanceled {
+  string id = 1;
+}

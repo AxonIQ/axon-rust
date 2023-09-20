@@ -1,10 +1,7 @@
-use crate::messages::commands::{
-    CancelGiftCard, ContainsGiftCardCommand, GiftCardCommand, IssueGiftCard, RedeemGiftCard,
-};
-use crate::messages::events::{
-    to_publishable_event_message, ContainsGiftCardEvent, GiftCardCanceled, GiftCardEvent,
-    GiftCardIssued, GiftCardRedeemed,
-};
+use crate::gift_card::commands::{CancelGiftCard, IssueGiftCard, RedeemGiftCard};
+use crate::gift_card::events::{GiftCardCanceled, GiftCardIssued, GiftCardRedeemed};
+use crate::messages::commands::{ContainsGiftCardCommand, GiftCardCommand};
+use crate::messages::events::{to_publishable_event_message, ContainsGiftCardEvent, GiftCardEvent};
 use crate::messages::AxonMessage;
 use crate::warp_util::{HandlerErrorMessage, HandlerResult};
 use crate::{CLIENT_ID, CONFIGURATION, CONTEXT};

@@ -1,8 +1,10 @@
-use crate::messages::commands::{
-    to_command_message, CancelGiftCard, IssueGiftCard, RedeemGiftCard,
+use crate::gift_card::commands::{CancelGiftCard, IssueGiftCard, RedeemGiftCard};
+use crate::gift_card::queries::{
+    FetchGiftCardSummaries, FetchGiftCardSummary, MultipleGiftCards, OneGiftCard,
 };
-use crate::messages::queries::{to_query_message, FetchGiftCardSummaries, FetchGiftCardSummary};
-use crate::messages::AxonMessage;
+use crate::messages::commands::to_command_message;
+use crate::messages::queries::to_query_message;
+use crate::messages::{value_to_message, AxonMessage};
 use crate::{CONFIGURATION, CONTEXT};
 use serde_derive::Serialize;
 use synapse_client::apis::commands_api::send_command_message;
@@ -85,13 +87,27 @@ struct ErrorMessage {
 }
 
 async fn send_and_handle_command_message(
-    command_message: CommandMessage,
+    message: CommandMessage,
 ) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
-    match send_command_message(&CONFIGURATION, CONTEXT, Some(command_message)).await {
+    let name = message.name.clone();
+    match send_command_message(&CONFIGURATION, CONTEXT, Some(message)).await {
         Ok(r) => {
-            let rep = warp::reply::json(&r);
+            let reply;
+            if name == IssueGiftCard::name() {
+                let message: IssueGiftCard = value_to_message(r.payload.unwrap().unwrap());
+                reply = warp::reply::json(&message);
+            } else if name == CancelGiftCard::name() {
+                let message: CancelGiftCard = value_to_message(r.payload.unwrap().unwrap());
+                reply = warp::reply::json(&message);
+            } else if name == RedeemGiftCard::name() {
+                let message: RedeemGiftCard = value_to_message(r.payload.unwrap().unwrap());
+                reply = warp::reply::json(&message);
+            } else {
+                log::warn!("Unknown name for command {}, returning raw response.", name);
+                reply = warp::reply::json(&r);
+            }
             Ok::<warp::reply::WithStatus<warp::reply::Json>, Rejection>(warp::reply::with_status(
-                rep,
+                reply,
                 StatusCode::OK,
             ))
         }
@@ -109,11 +125,22 @@ async fn send_and_handle_command_message(
 async fn send_and_handle_query_message(
     message: QueryMessage,
 ) -> Result<warp::reply::WithStatus<warp::reply::Json>, Rejection> {
+    let name = message.name.clone();
     match query_message(&CONFIGURATION, CONTEXT, Some(message)).await {
         Ok(r) => {
-            let rep = warp::reply::json(&r);
+            let reply;
+            if name == FetchGiftCardSummary::name() {
+                let message: OneGiftCard = value_to_message(r.payload.unwrap().unwrap());
+                reply = warp::reply::json(&message);
+            } else if name == FetchGiftCardSummaries::name() {
+                let message: MultipleGiftCards = value_to_message(r.payload.unwrap().unwrap());
+                reply = warp::reply::json(&message);
+            } else {
+                log::warn!("Unknown name for query {}, returning raw response.", name);
+                reply = warp::reply::json(&r);
+            }
             Ok::<warp::reply::WithStatus<warp::reply::Json>, Rejection>(warp::reply::with_status(
-                rep,
+                reply,
                 StatusCode::OK,
             ))
         }
