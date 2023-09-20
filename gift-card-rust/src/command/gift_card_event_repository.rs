@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use derive_more::Display;
 use fmodel_rust::aggregate::EventRepository;
@@ -20,8 +18,6 @@ pub enum AggregateError {
     FetchState(String),
     SaveState(String),
 }
-
-impl Error for AggregateError {}
 
 /// Map to domain events of type GiftCardEvent
 pub trait ToGiftCardEvent {
@@ -73,10 +69,9 @@ pub struct AxonServerEventRepository {
 
 /// Event repository implementation for Axon Server
 #[async_trait]
-impl EventRepository<GiftCardCommand, GiftCardEvent> for AxonServerEventRepository {
-    type Error = AggregateError;
-    type Version = i64;
-
+impl EventRepository<GiftCardCommand, GiftCardEvent, i64, AggregateError>
+    for AxonServerEventRepository
+{
     async fn fetch_events(
         &self,
         command: &GiftCardCommand,

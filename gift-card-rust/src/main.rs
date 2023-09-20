@@ -38,25 +38,21 @@ async fn rocket() -> _ {
         context: context.clone(),
     };
     // Create the aggregate
-    let aggregate = EventSourcedAggregate {
-        repository,
-        decider: decider(),
-    };
+    let aggregate = EventSourcedAggregate::new(repository, decider());
     // ####################
     // ### Query Side ###
     // ####################
 
     // Create the materialized view state repository
     let view_repository = InMemoryViewStateRepository::new();
+    let view_repository_clone = view_repository.clone();
     // Create the materialized view
-    let materialized_view = MaterializedView {
-        repository: view_repository,
-        view: view(),
-    };
+    let materialized_view = MaterializedView::new(view_repository, view());
     // Create the rocket instance and mount the routes
     let rocket = rocket::build()
         .manage(aggregate)
         .manage(materialized_view)
+        .manage(view_repository_clone)
         .manage(configuration.clone())
         .manage(context.clone())
         .mount(

@@ -1,4 +1,5 @@
 use fmodel_rust::aggregate::EventSourcedAggregate;
+use fmodel_rust::decider::Decider;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{post, State};
@@ -11,20 +12,21 @@ use crate::command::gift_card_command_handler::GiftCardState;
 use crate::command::gift_card_event_repository::{AggregateError, AxonServerEventRepository};
 use crate::gift_card_api::{GiftCardCommand, GiftCardEvent};
 
+/// Pragmatic type alias for the EventSourcedAggregate
+type GiftCardAggregate<'a> = EventSourcedAggregate<
+    GiftCardCommand,
+    GiftCardState,
+    GiftCardEvent,
+    AxonServerEventRepository,
+    Decider<'a, GiftCardCommand, GiftCardState, GiftCardEvent>,
+    i64,
+    AggregateError,
+>;
+
 #[post("/commands", format = "application/json", data = "<command_message>")]
 pub async fn commands(
     command_message: Json<CommandMessage>,
-    app_state: &State<
-        EventSourcedAggregate<
-            '_,
-            GiftCardCommand,
-            GiftCardState,
-            GiftCardEvent,
-            AxonServerEventRepository,
-            i64,
-            AggregateError,
-        >,
-    >,
+    app_state: &State<GiftCardAggregate<'_>>,
 ) -> Result<Json<CommandResponseMessage>, Status> {
     let command_message = command_message.into_inner();
     let command = command_message.to_gift_card_command();

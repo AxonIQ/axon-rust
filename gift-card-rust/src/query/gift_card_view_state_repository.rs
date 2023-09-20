@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use derive_more::Display;
@@ -21,23 +21,24 @@ pub enum MaterializedViewError {
 impl Error for MaterializedViewError {}
 
 /// Struct to hold the view state in memory - not for production use, consider using a database
+#[derive(Clone)]
 pub struct InMemoryViewStateRepository {
-    pub(crate) states: Mutex<HashMap<String, GiftCardViewState>>,
+    pub(crate) states: Arc<Mutex<HashMap<String, GiftCardViewState>>>,
 }
 
 impl InMemoryViewStateRepository {
     pub(crate) fn new() -> Self {
         InMemoryViewStateRepository {
-            states: Mutex::new(HashMap::new()),
+            states: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
 
 /// Implementation of [ViewStateRepository] for [InMemoryViewStateRepository]
 #[async_trait]
-impl ViewStateRepository<GiftCardEvent, GiftCardViewState> for InMemoryViewStateRepository {
-    type Error = MaterializedViewError;
-
+impl ViewStateRepository<GiftCardEvent, GiftCardViewState, MaterializedViewError>
+    for InMemoryViewStateRepository
+{
     async fn fetch_state(
         &self,
         event: &GiftCardEvent,

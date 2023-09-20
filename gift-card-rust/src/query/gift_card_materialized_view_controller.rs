@@ -1,4 +1,5 @@
 use fmodel_rust::materialized_view::{MaterializedView, ViewStateRepository};
+use fmodel_rust::view::View;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{post, State};
@@ -18,18 +19,19 @@ use crate::query::gift_card_view_state_repository::{
     InMemoryViewStateRepository, MaterializedViewError,
 };
 
+// Pragmatic type alias for the MaterializedView
+type GiftCardMaterializedView<'a> = MaterializedView<
+    GiftCardViewState,
+    GiftCardEvent,
+    InMemoryViewStateRepository,
+    View<'a, GiftCardViewState, GiftCardEvent>,
+    MaterializedViewError,
+>;
+
 #[post("/events", format = "application/json", data = "<event_message>")]
 pub async fn events(
     event_message: Json<EventMessage>,
-    materialized_view: &State<
-        MaterializedView<
-            '_,
-            GiftCardViewState,
-            GiftCardEvent,
-            InMemoryViewStateRepository,
-            MaterializedViewError,
-        >,
-    >,
+    materialized_view: &State<GiftCardMaterializedView<'_>>,
 ) -> Result<Json<GiftCardViewState>, Status> {
     let event = event_message.into_inner();
     let event = event.to_gift_card_event().unwrap();
@@ -43,22 +45,13 @@ pub async fn events(
 #[post("/queries", format = "application/json", data = "<query_message>")]
 pub async fn queries(
     query_message: Json<QueryMessage>,
-    materialized_view: &State<
-        MaterializedView<
-            '_,
-            GiftCardViewState,
-            GiftCardEvent,
-            InMemoryViewStateRepository,
-            MaterializedViewError,
-        >,
-    >,
+    repository: &State<InMemoryViewStateRepository>,
 ) -> Result<Json<QueryResponseMessage>, Status> {
     let query = query_message.into_inner();
     let query = query.to_gift_card_query().unwrap();
     match query {
         GiftCardQuery::ById(q) => {
-            let state = materialized_view
-                .repository
+            let state = repository
                 .fetch_state(&GiftCardEvent::Issue(GiftCardIssued {
                     id: q.id.to_owned(),
                     amount: 0,
@@ -77,7 +70,7 @@ pub async fn queries(
             }
         }
         GiftCardQuery::All(..) => {
-            let states = materialized_view.repository.states.lock().unwrap();
+            let states = repository.states.lock().unwrap();
             let states: Vec<GiftCardViewState> = states.values().cloned().collect();
             Ok(Json(QueryResponseMessage {
                 id: None,
