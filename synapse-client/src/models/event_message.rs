@@ -28,7 +28,7 @@ pub struct EventMessage {
     pub sequence_number: Option<i64>,
     /// Date and time
     #[serde(rename = "dateTime", skip_serializing_if = "Option::is_none")]
-    pub date_time: Option<f32>,
+    pub date_time: Option<String>,
     /// Global index of an event in the event store
     #[serde(rename = "index", skip_serializing_if = "Option::is_none")]
     pub index: Option<i64>,
