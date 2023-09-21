@@ -39,7 +39,10 @@ pub async fn commands(
                     meta_data: command_message.to_owned().meta_data,
                     payload: command_message.to_owned().payload,
                     payload_type: command_message.to_owned().payload_type,
-                    payload_revision: command_message.to_owned().payload_revision,
+                    payload_revision: match command_message.to_owned().payload_revision {
+                        Some(revision) => Some(revision),
+                        None => Some("0".to_string()),
+                    },
                 })),
                 Err(_err) => Err(Status::InternalServerError),
             }

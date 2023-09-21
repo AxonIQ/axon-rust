@@ -25,8 +25,8 @@ impl ToCommandMessage for GiftCardCommand {
         CommandMessage {
             name: self.payload_type(),
             routing_key: Some(self.id()),
-            priority: None,
-            id: None,
+            priority: Some(1),
+            id: Some(uuid::Uuid::new_v4().to_string()),
             meta_data: None,
             payload: Some(Some(payload)),
             payload_type: Some(self.payload_type()),
