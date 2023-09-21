@@ -3,7 +3,7 @@ Content-Type: application/json
 
 {
   "amount": 2000,
-  "id": "3",
+  "id": "1",
   "type": "Issue"
 }
 

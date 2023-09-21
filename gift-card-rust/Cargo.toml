@@ -5,8 +5,7 @@ edition = "2021"
 
 [dependencies]
 synapse-client = { path = "../synapse-client" }
-#fmodel-rust = "0.1.0"
-fmodel-rust = { git = "https://github.com/fraktalio/fmodel-rust", branch = "main" }
+fmodel-rust = "0.2.0"
 async-trait = "0.1.49"
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
 derive_more = "0.99.17"
