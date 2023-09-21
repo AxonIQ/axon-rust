@@ -1,0 +1,19 @@
+### Creates a new gift card, as long as the id not yet exist, and the amount is at least 10.
+POST http://localhost:8090/issue/id/0001/amount/1000
+Content-Type: application/json
+
+### Redeems an existing gift card, as long as the amount is sufficient, and it hasn't been cancelled.
+POST http://localhost:8090/redeem/id/0001/amount/10
+Content-Type: application/json
+
+### Cancels a gift card, as long as it exist, has amount remaining, and isn't canceled yet.
+POST http://localhost:8090/cancel/id/0004
+Content-Type: application/json
+
+### Get the state of the gift card with a certain id.
+GET http://localhost:8090/query/id/0001
+Content-Type: application/json
+
+### Get a list of gift cards, in order of creation.
+GET http://localhost:8090/query/limit/10/offset/0
+Content-Type: application/json

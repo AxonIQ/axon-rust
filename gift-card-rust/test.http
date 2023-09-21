@@ -1,0 +1,26 @@
+POST http://localhost:8000/gift_card_commands
+Content-Type: application/json
+
+{
+  "amount": 2000,
+  "id": "1",
+  "type": "Issue"
+}
+
+###
+
+POST http://localhost:8000/gift_card_queries
+Content-Type: application/json
+
+{
+  "type": "All"
+}
+
+###
+POST http://localhost:8000/gift_card_queries
+Content-Type: application/json
+
+{
+  "type": "ById",
+  "id": "1"
+}
