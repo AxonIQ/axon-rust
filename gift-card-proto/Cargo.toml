@@ -1,9 +1,9 @@
 [package]
-name = "gift-card-raw"
+name = "gift-card-proto"
 version = "0.1.0"
 edition = "2021"
 description = "A small demo project using the client directly"
-license = "Unlicense"
+license = "Apache-2.0
 
 [dependencies]
 base64 = "0.21.4"
