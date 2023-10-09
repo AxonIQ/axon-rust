@@ -6,11 +6,11 @@ use crate::gift_card_api::GiftCardQuery;
 
 /// Send/Dispatch a query to Axon Server
 pub async fn send_gift_card_query(
-    command: GiftCardQuery,
+    query: GiftCardQuery,
     configuration: &configuration::Configuration,
     context: &str,
 ) -> Result<QueryResponseMessage, Error<QueryMessageError>> {
-    query_message(configuration, context, Some(command.to_query_message())).await
+    query_message(configuration, context, Some(query.to_query_message())).await
 }
 
 /// Map to Axon QueryMessage
