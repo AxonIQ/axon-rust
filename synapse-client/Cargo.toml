@@ -3,8 +3,7 @@ name = "synapse-client"
 version = "1.0.0"
 authors = ["OpenAPI Generator team and contributors"]
 description = "API for Axon Synapse http services"
-# Override this license by providing a License Object in the OpenAPI.
-license = "Unlicense"
+license = "Apache-2.0"
 edition = "2018"
 
 [dependencies]
